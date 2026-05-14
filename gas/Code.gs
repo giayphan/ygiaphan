@@ -23,6 +23,11 @@ const SH = {
   magic:'magic_tokens', courses:'courses'
 };
 
+// รันฟังก์ชันนี้ครั้งเดียวเพื่อขอ permission ส่งอีเมล
+function authorizeMail(){
+  MailApp.sendEmail(Session.getEffectiveUser().getEmail(), 'ygiaphan auth test', 'permissions granted ✓');
+}
+
 function setup(){
   const ss = SpreadsheetApp.openById(SHEET_ID);
   ensureSheet_(ss, SH.posts, ['slug','date','categories','icon','cover','video',
