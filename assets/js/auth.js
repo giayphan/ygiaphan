@@ -17,6 +17,7 @@
       catch(_){ return null; }
     },
     magicSend(email){ return post({action:'magic_send', email}); },
+    magicVerify(email, otp){ return post({action:'magic_verify', email, otp}); },
     fbLogin(access_token){ return post({action:'fb_login', access_token}); },
     async logout(){
       const t = this.token(); this.setToken('');

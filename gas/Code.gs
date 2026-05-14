@@ -62,6 +62,7 @@ function doPost(e){
   if (a === 'admin_delcomment') return json_(adminDelComment_(b));
   if (a === 'admin_approve')    return json_(adminApprove_(b));
   if (a === 'magic_send')    return json_(magicSend_(b));
+  if (a === 'magic_verify')  return json_(magicVerifyApi_(b));
   if (a === 'fb_login')      return json_(fbLogin_(b));
   if (a === 'logout')        return json_(logout_(b));
   if (a === 'order_create')  return json_(orderCreate_(b));
@@ -167,22 +168,39 @@ function adminApprove_(b){
 function magicSend_(b){
   const email = String(b.email||'').trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return {error:'invalid email'};
-  const token = rid_('m_') + rid_('');
+  // สร้าง OTP 6 หลัก (ใช้กรอกในเว็บ) + token (ใช้ใน magic link fallback)
+  const otp = String(Math.floor(100000 + Math.random()*900000));
   const exp = now_() + MAGIC_TTL_MIN*60*1000;
-  sheet_(SH.magic).appendRow([token, email, now_(), exp, false]);
-  const link = SITE_URL.replace(/\/$/,'') + '/login.html?token=' + encodeURIComponent(token);
-  // ใช้ Apps Script "exec" จัดการ verify โดยตรงก็ได้: SITE_URL ของ Web app + ?action=magic_verify
+  sheet_(SH.magic).appendRow([otp, email, now_(), exp, false]);
   try {
     MailApp.sendEmail({
       to: email,
-      subject: 'Đăng nhập ygiaphan / เข้าสู่ระบบ',
+      subject: '[ygiaphan] รหัสยืนยัน / Mã xác nhận: ' + otp,
       htmlBody: `
-        <p>คลิกลิงก์ด้านล่างเพื่อเข้าสู่ระบบ (มีอายุ ${MAGIC_TTL_MIN} นาที):</p>
-        <p><a href="${link}" style="background:#2d8a4e;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">เข้าสู่ระบบ / Đăng nhập</a></p>
-        <p style="color:#888;font-size:12px">หรือคัดลอกลิงก์: ${link}</p>`
+        <div style="font:16px system-ui;max-width:480px;margin:0 auto;padding:20px">
+          <h2 style="color:#2d8a4e">รหัสเข้าสู่ระบบ / Mã đăng nhập</h2>
+          <p>ใช้รหัสนี้กรอกในเว็บไซต์ (มีอายุ ${MAGIC_TTL_MIN} นาที):</p>
+          <div style="background:#e8f5dd;color:#2d8a4e;font-size:32px;font-weight:700;letter-spacing:8px;padding:20px;border-radius:12px;text-align:center;margin:20px 0">${otp}</div>
+          <p style="color:#888;font-size:12px">ถ้าคุณไม่ได้ขอรหัสนี้ ไม่ต้องทำอะไร</p>
+        </div>`
     });
   } catch(e){ return {error:'mail failed: '+e}; }
   return {ok:true};
+}
+function magicVerifyApi_(b){
+  const email = String(b.email||'').trim().toLowerCase();
+  const otp = String(b.otp||'').trim();
+  if (!email || !otp) return {error:'missing'};
+  const sh = sheet_(SH.magic);
+  const r = sh.getDataRange().getValues(); const h = r.shift();
+  const i = r.findIndex(x => x[h.indexOf('token')] == otp && x[h.indexOf('email')] === email);
+  if (i<0) return {error:'รหัสไม่ถูกต้อง'};
+  if (r[i][h.indexOf('used')] === true) return {error:'รหัสถูกใช้ไปแล้ว'};
+  if (r[i][h.indexOf('expires_at')] < now_()) return {error:'รหัสหมดอายุ'};
+  sh.getRange(i+2, h.indexOf('used')+1).setValue(true);
+  const user = upsertUser_({email, provider:'email'});
+  const s = createSession_(user.user_id);
+  return {ok:true, session: s.token, user: pickUser_(user)};
 }
 function magicConsume_(token){
   const sh = sheet_(SH.magic);
@@ -197,12 +215,26 @@ function magicConsume_(token){
 }
 function htmlMagicVerify_(token){
   const m = magicConsume_(token);
-  if (m.error) return HtmlService.createHtmlOutput(`<p style="font:16px system-ui">${m.error}</p>`);
+  if (m.error) return HtmlService.createHtmlOutput(
+    `<div style="font:16px system-ui;padding:40px;text-align:center">
+      <h2 style="color:#c0392b">✗ ${m.error}</h2>
+      <p>ลิงก์หมดอายุหรือใช้ไปแล้ว <a href="${SITE_URL}/login.html">ขอลิงก์ใหม่</a></p>
+    </div>`);
   const user = upsertUser_({email:m.email, provider:'email'});
   const s = createSession_(user.user_id);
-  // redirect กลับเว็บพร้อม session token
   const back = SITE_URL.replace(/\/$/,'') + '/login.html?session=' + encodeURIComponent(s.token);
-  return HtmlService.createHtmlOutput(`<script>location.replace(${JSON.stringify(back)})</script>`);
+  // ใช้ทั้ง meta refresh + script + ปุ่มสำรอง (กัน sandbox block)
+  return HtmlService.createHtmlOutput(`
+    <!doctype html><meta charset="utf-8">
+    <meta http-equiv="refresh" content="0;url=${back}">
+    <title>เข้าสู่ระบบ...</title>
+    <div style="font:16px system-ui;padding:40px;text-align:center">
+      <h2 style="color:#2d8a4e">✓ ยืนยันสำเร็จ</h2>
+      <p>กำลังพากลับไปที่เว็บ...</p>
+      <p><a href="${back}" style="background:#2d8a4e;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;margin-top:10px">คลิกที่นี่ถ้าไม่ redirect อัตโนมัติ</a></p>
+    </div>
+    <script>try{top.location.href=${JSON.stringify(back)}}catch(e){location.href=${JSON.stringify(back)}}</script>
+  `).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 /* ===== Facebook Login ===== */

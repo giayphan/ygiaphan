@@ -16,10 +16,14 @@
   .ad h1{margin:0 0 12px;color:var(--ad-brand);font-weight:700;font-size:1.6rem}
   .ad .topbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;
     background:var(--ad-card);padding:12px;border-radius:12px;border:1px solid var(--ad-line)}
+  .ad .topbar input{width:auto;flex:1;min-width:200px}
   .ad input,.ad textarea,.ad select{
+    width:100%;box-sizing:border-box;
     padding:9px 12px;border:1px solid var(--ad-line);border-radius:8px;font:inherit;
     background:#fff;color:var(--ad-fg);transition:border .15s,box-shadow .15s
   }
+  .ad .row > div{display:flex;flex-direction:column;gap:4px}
+  .ad form > div > label{display:block}
   .ad input:focus,.ad textarea:focus,.ad select:focus{
     outline:none;border-color:var(--ad-brand);box-shadow:0 0 0 3px var(--ad-brand-soft)
   }

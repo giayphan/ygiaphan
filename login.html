@@ -40,8 +40,15 @@
     <p class="sub">รับ comment, ซื้อคอร์ส, ติดตามคำสั่งซื้อของคุณ</p>
 
     <form id="emailForm">
-      <input type="email" name="email" placeholder="your@email.com" required>
-      <button class="btn" type="submit" id="emailBtn">📧 ส่งลิงก์เข้าสู่ระบบ</button>
+      <input type="email" name="email" id="emailInput" placeholder="your@email.com" required>
+      <button class="btn" type="submit" id="emailBtn">📧 ส่งรหัส OTP</button>
+    </form>
+    <form id="otpForm" hidden>
+      <p class="sub" style="margin-bottom:8px">กรอกรหัส 6 หลักจากอีเมล <strong id="otpEmail"></strong></p>
+      <input type="text" name="otp" id="otpInput" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required
+        style="text-align:center;letter-spacing:8px;font-size:1.3rem;font-weight:700">
+      <button class="btn" type="submit" id="otpBtn">✓ ยืนยัน</button>
+      <button class="btn" type="button" id="otpBack" style="background:#888;margin-top:6px">← เปลี่ยน email</button>
     </form>
 
     <div class="divider" id="fbDiv" hidden>หรือ</div>
@@ -75,7 +82,7 @@
 const $ = s => document.querySelector(s);
 const params = new URLSearchParams(location.search);
 
-// 1) ถ้า redirect กลับมาพร้อม session → เก็บ + redirect ไปหน้าเดิม
+// 1) ถ้า redirect กลับมาพร้อม session (จาก magic link fallback) → เก็บ + redirect
 if (params.get('session')){
   window.YP_AUTH.setToken(params.get('session'));
   const back = sessionStorage.getItem('yp:back') || 'index.html';
@@ -96,19 +103,42 @@ async function refreshMe(){
 }
 refreshMe();
 
-// 3) ส่ง magic link
+// 3) ส่ง OTP
+let pendingEmail = '';
 $('#emailForm').addEventListener('submit', async e => {
   e.preventDefault();
   const btn = $('#emailBtn'); btn.disabled = true; btn.innerHTML = '<span class="yp-spinner"></span> กำลังส่ง…';
-  const email = e.target.email.value.trim();
+  const email = $('#emailInput').value.trim();
   const r = await window.YP_AUTH.magicSend(email);
-  btn.disabled = false; btn.innerHTML = '📧 ส่งลิงก์เข้าสู่ระบบ';
+  btn.disabled = false; btn.innerHTML = '📧 ส่งรหัส OTP';
   if (r.ok){
-    $('#msg').innerHTML = `<div class="msg msg--ok">✓ ส่งลิงก์ไปที่ <strong>${email}</strong> แล้ว ตรวจสอบกล่องอีเมล (มีอายุ 15 นาที)</div>`;
+    pendingEmail = email;
+    $('#otpEmail').textContent = email;
+    $('#emailForm').hidden = true;
+    $('#otpForm').hidden = false;
+    $('#msg').innerHTML = `<div class="msg msg--ok">✓ ส่งรหัสไปที่ ${email} แล้ว</div>`;
+    setTimeout(()=>$('#otpInput').focus(), 100);
   } else {
     $('#msg').innerHTML = `<div class="msg msg--err">✗ ${r.error||'error'}</div>`;
   }
 });
+
+// 4) ยืนยัน OTP
+$('#otpForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('#otpBtn'); btn.disabled = true; btn.innerHTML = '<span class="yp-spinner"></span> กำลังยืนยัน…';
+  const otp = $('#otpInput').value.trim();
+  const r = await window.YP_AUTH.magicVerify(pendingEmail, otp);
+  btn.disabled = false; btn.innerHTML = '✓ ยืนยัน';
+  if (r.ok){
+    window.YP_AUTH.setToken(r.session);
+    $('#msg').innerHTML = `<div class="msg msg--ok">✓ เข้าสู่ระบบสำเร็จ</div>`;
+    setTimeout(()=> location.replace(sessionStorage.getItem('yp:back')||'index.html'), 500);
+  } else {
+    $('#msg').innerHTML = `<div class="msg msg--err">✗ ${r.error||'error'}</div>`;
+  }
+});
+$('#otpBack').onclick = () => { $('#otpForm').hidden = true; $('#emailForm').hidden = false; $('#msg').innerHTML=''; };
 
 // 4) Facebook Login
 const cfg = window.YP_CONFIG||{};
