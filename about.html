@@ -16,18 +16,90 @@
       <p class="vi">ygiaphan là blog dạy tiếng Thái cho người Việt, với nội dung vui, dễ hiểu và dùng được ngay.</p>
       <p class="th">ygiaphan คือบล็อกสอนภาษาเวียดนามสำหรับคนไทย ที่ตั้งใจทำเนื้อหาให้สนุก เข้าใจง่าย และใช้ได้จริง</p>
     </div>
+
+    <section class="donate" id="donate">
+      <h2>💚 สนับสนุนเรา / Ủng hộ chúng tôi</h2>
+      <p class="muted">ถ้าเนื้อหาช่วยคุณได้ ก็ช่วยเลี้ยงกาแฟเราหน่อยน้าาา 🍵</p>
+      <div class="donate__grid" id="donateGrid"></div>
+      <details class="donate__log">
+        <summary>แจ้งการโอน (เพื่อ tag ขอบคุณบนเว็บ)</summary>
+        <form id="donateForm">
+          <input name="name" placeholder="ชื่อ (จะแสดงในรายชื่อขอบคุณ)" maxlength="50">
+          <input name="amount" type="number" placeholder="จำนวน (THB)" required min="1">
+          <select name="channel" required>
+            <option value="">— ช่องทาง —</option>
+            <option value="promptpay">PromptPay</option>
+            <option value="paypal">PayPal</option>
+          </select>
+          <textarea name="note" placeholder="ข้อความถึงผู้สร้าง (optional)" maxlength="500"></textarea>
+          <button class="btn btn--primary" type="submit">ส่งการแจ้งโอน</button>
+          <p id="donateMsg" class="muted"></p>
+        </form>
+      </details>
+    </section>
   </article>
 </main>
+
+<style>
+  .donate{margin-top:40px;padding:24px;background:var(--brand-bg);border-radius:16px}
+  .donate h2{margin:0 0 6px;color:var(--brand)}
+  .donate__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:16px 0}
+  .donate__item{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center}
+  .donate__item img{max-width:100%;height:auto;border-radius:8px;margin-bottom:8px}
+  .donate__item strong{display:block;color:var(--brand);margin-bottom:4px}
+  .donate__item code{background:var(--green-soft);padding:4px 8px;border-radius:6px;font-size:.9em;user-select:all;cursor:pointer}
+  .donate__item a{display:inline-block;background:var(--brand);color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px}
+  .donate__item a:hover{background:#236d3e}
+  .donate__log{margin-top:16px}
+  .donate__log summary{cursor:pointer;font-weight:600;color:var(--brand)}
+  .donate__log form{display:grid;gap:8px;margin-top:12px}
+  .donate__log input,.donate__log textarea,.donate__log select{
+    padding:9px 12px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff
+  }
+</style>
 <div data-include="footer"></div>
 
+<script src="content/config.js"></script>
 <script src="content/i18n/vi.js"></script>
 <script src="content/i18n/th.js"></script>
 <script src="content/site.js"></script>
 <script src="content/nav.js"></script>
 <script src="assets/js/app.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/api.js"></script>
 <script>
 document.querySelector('[data-i18n="about_title"]').textContent = (window.YP_T||{}).about_title||'About';
 document.querySelectorAll('[data-content] p').forEach(p => p.hidden = (window.YP_LANG !== p.classList[0]));
+
+// donate grid
+const D = (window.YP_CONFIG||{}).DONATE||{};
+const items = [];
+if (D.promptpay) items.push(`<div class="donate__item">
+  <strong>PromptPay 🇹🇭</strong>
+  ${D.promptpay_qr ? `<img src="${D.promptpay_qr}" alt="PromptPay QR">` : ''}
+  <code title="คลิกเพื่อ copy" onclick="navigator.clipboard.writeText('${D.promptpay}');this.textContent='✓ คัดลอกแล้ว';setTimeout(()=>this.textContent='${D.promptpay}',1500)">${D.promptpay}</code>
+</div>`);
+if (D.paypal) items.push(`<div class="donate__item">
+  <strong>PayPal 🌐</strong>
+  <p class="muted" style="margin:8px 0">รับเป็น USD</p>
+  <a href="${D.paypal}" target="_blank" rel="noopener">เปิด PayPal →</a>
+</div>`);
+document.getElementById('donateGrid').innerHTML = items.join('') || '<p class="muted">ยังไม่ได้ตั้งค่า donate</p>';
+
+// donate log form
+document.getElementById('donateForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.currentTarget;
+  const msg = document.getElementById('donateMsg');
+  const btn = f.querySelector('button');
+  btn.disabled = true; btn.innerHTML = '<span class="yp-spinner"></span> กำลังส่ง…';
+  try {
+    const r = await window.YP_API.donateLog(f.name.value, +f.amount.value, f.channel.value, f.note.value);
+    if (r.ok){ msg.textContent = '✓ ขอบคุณมากๆ น้าาา 💚'; f.reset(); }
+    else msg.textContent = '✗ '+(r.error||'error');
+  } catch(_){ msg.textContent = 'network error'; }
+  finally { btn.disabled = false; btn.innerHTML = 'ส่งการแจ้งโอน'; }
+});
 </script>
 </body>
 </html>

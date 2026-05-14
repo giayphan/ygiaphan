@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>เข้าสู่ระบบ · ygiaphan</title>
+<link rel="icon" href="assets/img/favicon.svg">
+<link rel="stylesheet" href="assets/css/main.css">
+<style>
+  .login-wrap{max-width:420px;margin:60px auto;padding:0 16px}
+  .login-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px;
+    box-shadow:0 4px 16px rgba(45,138,78,.12)}
+  .login-card h1{margin:0 0 6px;color:var(--brand);font-size:1.4rem}
+  .login-card .sub{color:var(--muted);font-size:.9rem;margin-bottom:20px}
+  .login-card input{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:8px;
+    font:inherit;background:#fff;color:var(--fg);margin-bottom:10px;box-sizing:border-box}
+  .login-card input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-bg)}
+  .login-card .btn{width:100%;padding:12px;border:none;border-radius:8px;cursor:pointer;
+    font-weight:600;background:var(--brand);color:#fff;font-size:1rem;transition:all .15s}
+  .login-card .btn:hover{background:#236d3e}
+  .login-card .btn:disabled{opacity:.5;cursor:not-allowed}
+  .login-card .btn--fb{background:#1877f2;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .login-card .btn--fb:hover{background:#1564d4}
+  .login-card .divider{text-align:center;color:var(--muted);font-size:.85rem;margin:16px 0;position:relative}
+  .login-card .divider::before,.login-card .divider::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:var(--line)}
+  .login-card .divider::before{left:0} .login-card .divider::after{right:0}
+  .login-card .msg{padding:10px;border-radius:8px;margin-top:12px;font-size:.9rem}
+  .login-card .msg--ok{background:#d4edda;color:#155724}
+  .login-card .msg--err{background:#fde2e0;color:#a03020}
+  .me-card{text-align:center}
+  .me-card img{width:64px;height:64px;border-radius:50%;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div data-include="header"></div>
+
+<main class="login-wrap">
+  <div class="login-card" id="loginCard">
+    <h1>🌿 เข้าสู่ระบบ</h1>
+    <p class="sub">รับ comment, ซื้อคอร์ส, ติดตามคำสั่งซื้อของคุณ</p>
+
+    <form id="emailForm">
+      <input type="email" name="email" placeholder="your@email.com" required>
+      <button class="btn" type="submit" id="emailBtn">📧 ส่งลิงก์เข้าสู่ระบบ</button>
+    </form>
+
+    <div class="divider" id="fbDiv" hidden>หรือ</div>
+    <button class="btn btn--fb" id="fbBtn" hidden>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      เข้าสู่ระบบด้วย Facebook
+    </button>
+
+    <div id="msg"></div>
+  </div>
+
+  <div class="login-card me-card" id="meCard" hidden>
+    <img id="meAvatar" src="" alt="">
+    <h1 id="meName"></h1>
+    <p class="sub" id="meEmail"></p>
+    <button class="btn" id="logoutBtn">ออกจากระบบ</button>
+  </div>
+</main>
+
+<div data-include="footer"></div>
+
+<script src="content/config.js"></script>
+<script src="content/i18n/vi.js"></script>
+<script src="content/i18n/th.js"></script>
+<script src="content/site.js"></script>
+<script src="content/nav.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/auth.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const params = new URLSearchParams(location.search);
+
+// 1) ถ้า redirect กลับมาพร้อม session → เก็บ + redirect ไปหน้าเดิม
+if (params.get('session')){
+  window.YP_AUTH.setToken(params.get('session'));
+  const back = sessionStorage.getItem('yp:back') || 'index.html';
+  sessionStorage.removeItem('yp:back');
+  location.replace(back);
+}
+
+// 2) ถ้า login อยู่แล้ว → แสดงโปรไฟล์
+async function refreshMe(){
+  const me = await window.YP_AUTH.me();
+  if (me && me.ok){
+    $('#loginCard').hidden = true;
+    $('#meCard').hidden = false;
+    $('#meAvatar').src = me.user.avatar || 'assets/img/favicon.svg';
+    $('#meName').textContent = me.user.name || me.user.email;
+    $('#meEmail').textContent = me.user.email;
+  }
+}
+refreshMe();
+
+// 3) ส่ง magic link
+$('#emailForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('#emailBtn'); btn.disabled = true; btn.innerHTML = '<span class="yp-spinner"></span> กำลังส่ง…';
+  const email = e.target.email.value.trim();
+  const r = await window.YP_AUTH.magicSend(email);
+  btn.disabled = false; btn.innerHTML = '📧 ส่งลิงก์เข้าสู่ระบบ';
+  if (r.ok){
+    $('#msg').innerHTML = `<div class="msg msg--ok">✓ ส่งลิงก์ไปที่ <strong>${email}</strong> แล้ว ตรวจสอบกล่องอีเมล (มีอายุ 15 นาที)</div>`;
+  } else {
+    $('#msg').innerHTML = `<div class="msg msg--err">✗ ${r.error||'error'}</div>`;
+  }
+});
+
+// 4) Facebook Login
+const cfg = window.YP_CONFIG||{};
+if (cfg.FB_APP_ID){
+  $('#fbBtn').hidden = false; $('#fbDiv').hidden = false;
+  window.fbAsyncInit = () => FB.init({appId:cfg.FB_APP_ID, cookie:true, xfbml:false, version:'v19.0'});
+  (function(d,s,i){const fjs=d.getElementsByTagName(s)[0]; if(d.getElementById(i)) return;
+    const js=d.createElement(s); js.id=i; js.src='https://connect.facebook.net/en_US/sdk.js'; fjs.parentNode.insertBefore(js,fjs);
+  })(document,'script','fb-sdk');
+  $('#fbBtn').onclick = () => {
+    FB.login(async resp => {
+      if (resp.authResponse){
+        $('#fbBtn').innerHTML = '<span class="yp-spinner"></span> กำลังเข้าสู่ระบบ…';
+        const r = await window.YP_AUTH.fbLogin(resp.authResponse.accessToken);
+        if (r.ok){ window.YP_AUTH.setToken(r.session); location.reload(); }
+        else $('#msg').innerHTML = `<div class="msg msg--err">${r.error}</div>`;
+      }
+    }, {scope:'public_profile,email'});
+  };
+}
+
+// 5) Logout
+$('#logoutBtn').onclick = async () => {
+  await window.YP_AUTH.logout();
+  location.reload();
+};
+</script>
+</body>
+</html>

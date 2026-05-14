@@ -51,9 +51,46 @@ assets/js/api.js         ← API client
 .github/workflows/pages.yml
 ```
 
+## 🔥 แก้ปัญหา `error: unauthorized`
+
+1. แก้ `ADMIN_KEY` ใน `gas/Code.gs`
+2. กด save ใน editor
+3. **สำคัญ:** Deploy → Manage deployments → ไอคอน ⚙️ ดินสอ → **Version: New version** → Deploy
+   (ถ้าไม่กด New version → Web app ยังใช้โค้ดเก่า)
+4. กลับมาที่ `admin.html` กรอก key ใหม่
+
+## หน้าใหม่ที่เพิ่ม
+
+- `/admin.html` — จัดการ posts, comments, orders, users, donations
+- `/login.html` — สมัคร/เข้าสู่ระบบ (Magic Link + Facebook)
+- `/about.html` — มี donate section แล้ว
+
+## ตั้งค่า Facebook Login (optional)
+
+1. https://developers.facebook.com/apps → Create App → Consumer
+2. Add product: **Facebook Login** → Settings
+3. Valid OAuth Redirect URIs: `https://<your-domain>` + `https://localhost`
+4. App ID → ใส่ใน `content/config.js` → `FB_APP_ID`
+5. ต้อง verify domain ใน FB app + เปิด App Mode: Live
+
+## ตั้งค่า Magic Link
+
+- `SITE_URL` ใน `gas/Code.gs` ต้องเป็น URL จริงของ GitHub Pages เช่น `https://user.github.io/repo`
+- Apps Script ใช้ `MailApp.sendEmail` ส่งผ่าน Gmail ของ owner (quota 100/วัน free)
+- ถ้าต้องการ scale → ใช้ Brevo / SendGrid (เพิ่ม UrlFetchApp call)
+
+## ตั้งค่าขายคอร์ส
+
+1. ไปที่ Google Sheet → tab `courses` → เพิ่ม row:
+   - `id` (เช่น `basic-thai`), `price` (เช่น `590`), `currency` `THB`, `title_vi`/`title_th`, `desc_vi`/`desc_th`, `active` `TRUE`
+2. หน้าเว็บจะเรียก `?action=courses`
+3. User คลิกซื้อ → `order_create` → ได้ `order_id` → สแกน PromptPay QR → upload slip URL → admin ยืนยัน
+
 ## หมายเหตุ
 
 - API ใช้ `Content-Type: text/plain` เพื่อเลี่ยง CORS preflight ของ Apps Script
-- Sheet `posts` คอลัมน์: slug, date, categories, icon, cover, video, title_vi, title_th, desc_vi, desc_th, body_vi, body_th, published
-- Sheet `comments` คอลัมน์: ts, slug, name, msg, ip
+- Sheets ทั้งหมด: posts, comments, users, sessions, orders, donations, magic_tokens, courses
 - Comment ใช้ honeypot + math captcha + min-fill-time (กัน bot)
+- Session token เก็บใน localStorage (`yp:session`), หมดอายุ 30 วัน
+- Magic token TTL 15 นาที ใช้ครั้งเดียว
+- `members_only=TRUE` ใน post → body จะถูกซ่อนถ้ายังไม่ login

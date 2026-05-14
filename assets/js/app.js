@@ -52,6 +52,7 @@
           return `<a class="nav__link" href="${item.url}">${label}</a>`;
         }).join('')}
         <button class="lang-switch" title="Change language">🌐 ${T.switch_lang||'TH'}</button>
+        <a class="nav__link nav__login" href="login.html">👤</a>
       </nav>
     </div>
   </header>`;

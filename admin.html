@@ -6,78 +6,215 @@
 <title>Admin · ygiaphan</title>
 <link rel="stylesheet" href="assets/css/main.css">
 <style>
-  .admin{max-width:860px;margin:24px auto;padding:0 16px}
-  .admin form{display:grid;gap:10px}
-  .admin input,.admin textarea,.admin select{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font:inherit}
-  .admin textarea{min-height:160px;font-family:ui-monospace,monospace}
-  .admin .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .admin .bar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
-  .admin .list{margin-top:24px}
-  .admin .item{display:flex;justify-content:space-between;gap:8px;padding:8px;border-bottom:1px solid #eee}
-  .admin .muted{color:#888;font-size:.9em}
+  :root{
+    --ad-bg:#f6fbf3; --ad-card:#fff; --ad-fg:#234231; --ad-muted:#6b8077;
+    --ad-line:#dceadb; --ad-brand:#2d8a4e; --ad-brand-dim:#4caf6f;
+    --ad-brand-soft:#e8f5dd; --ad-danger:#c0392b; --ad-warn:#d39e00;
+  }
+  body{background:var(--ad-bg);color:var(--ad-fg);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+  .ad{max-width:1100px;margin:0 auto;padding:24px 16px}
+  .ad h1{margin:0 0 12px;color:var(--ad-brand);font-weight:700;font-size:1.6rem}
+  .ad .topbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;
+    background:var(--ad-card);padding:12px;border-radius:12px;border:1px solid var(--ad-line)}
+  .ad input,.ad textarea,.ad select{
+    padding:9px 12px;border:1px solid var(--ad-line);border-radius:8px;font:inherit;
+    background:#fff;color:var(--ad-fg);transition:border .15s,box-shadow .15s
+  }
+  .ad input:focus,.ad textarea:focus,.ad select:focus{
+    outline:none;border-color:var(--ad-brand);box-shadow:0 0 0 3px var(--ad-brand-soft)
+  }
+  .ad textarea{min-height:160px;font-family:ui-monospace,Menlo,Consolas,monospace;width:100%}
+  .ad .btn{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:9px 16px;border:none;border-radius:8px;cursor:pointer;
+    font-weight:600;font-size:.93rem;transition:all .15s;
+    background:var(--ad-brand);color:#fff
+  }
+  .ad .btn:hover{background:#236d3e;transform:translateY(-1px);box-shadow:0 4px 12px rgba(45,138,78,.3)}
+  .ad .btn:active{transform:translateY(0)}
+  .ad .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .ad .btn--ghost{background:#fff;color:var(--ad-brand);border:1px solid var(--ad-brand)}
+  .ad .btn--ghost:hover{background:var(--ad-brand-soft)}
+  .ad .btn--danger{background:var(--ad-danger)} .ad .btn--danger:hover{background:#a03020}
+  .ad .btn--warn{background:var(--ad-warn);color:#fff} .ad .btn--warn:hover{background:#b88600}
+  .ad .btn--sm{padding:6px 10px;font-size:.85rem}
+  .ad .tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid var(--ad-line)}
+  .ad .tabs button{
+    background:none;border:none;padding:10px 16px;cursor:pointer;
+    color:var(--ad-muted);font-weight:600;border-bottom:2px solid transparent;margin-bottom:-2px;
+    transition:all .15s
+  }
+  .ad .tabs button:hover{color:var(--ad-brand)}
+  .ad .tabs button.is-active{color:var(--ad-brand);border-bottom-color:var(--ad-brand)}
+  .ad .panel{display:none} .ad .panel.is-active{display:block}
+  .ad .card{background:var(--ad-card);border:1px solid var(--ad-line);border-radius:12px;padding:16px;margin-bottom:12px}
+  .ad form{display:grid;gap:10px}
+  .ad .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:600px){.ad .row{grid-template-columns:1fr}}
+  .ad label{font-size:.85rem;color:var(--ad-muted);font-weight:600}
+  .ad .checkbox{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+  .ad .checkbox input{width:18px;height:18px;accent-color:var(--ad-brand)}
+  .ad .item{display:flex;justify-content:space-between;align-items:center;gap:8px;
+    padding:10px 12px;border:1px solid var(--ad-line);border-radius:8px;margin-bottom:6px;background:#fff}
+  .ad .item:hover{border-color:var(--ad-brand-dim);background:var(--ad-brand-soft)}
+  .ad .muted{color:var(--ad-muted);font-size:.85em}
+  .ad .pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:600;background:var(--ad-brand-soft);color:var(--ad-brand)}
+  .ad .pill--warn{background:#fff3cd;color:#856404} .ad .pill--danger{background:#fde2e0;color:#a03020}
+  .ad .pill--ok{background:#d4edda;color:#155724}
+  .ad .status{color:var(--ad-muted);font-size:.9em;display:inline-flex;gap:6px;align-items:center}
+  .ad .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 </style>
 </head>
 <body>
 <div class="yp-overlay" id="overlay" hidden><span class="yp-spinner"></span><span>กำลังทำงาน…</span></div>
-<main class="admin">
-  <h1>Admin</h1>
-  <div class="bar">
-    <input id="key" type="password" placeholder="Admin key" style="max-width:240px">
-    <button id="load">Load</button>
-    <button id="new">+ New</button>
-    <span id="status" class="muted"></span>
+
+<div class="ad">
+  <h1>🌿 ygiaphan Admin</h1>
+
+  <div class="topbar">
+    <input id="key" type="password" placeholder="🔑 Admin key" style="flex:1;min-width:200px">
+    <button class="btn" id="login">เข้าสู่ระบบ</button>
+    <button class="btn btn--ghost" id="logout">ออก</button>
+    <span class="status" id="status"></span>
   </div>
 
-  <form id="f">
-    <div class="row">
-      <input name="slug" placeholder="slug (เช่น greetings)" required>
-      <input name="date" type="date" required>
-    </div>
-    <div class="row">
-      <input name="categories" placeholder="categories (คั่นด้วย ,)">
-      <input name="icon" placeholder="icon emoji">
-    </div>
-    <div class="row">
-      <input name="cover" placeholder="cover URL (optional)">
-      <input name="video" placeholder="video embed URL (optional)">
-    </div>
-    <div class="row">
-      <input name="title_vi" placeholder="title (vi)" required>
-      <input name="title_th" placeholder="title (th)" required>
-    </div>
-    <div class="row">
-      <input name="desc_vi" placeholder="desc (vi)">
-      <input name="desc_th" placeholder="desc (th)">
-    </div>
-    <textarea name="body_vi" placeholder="body markdown (vi)"></textarea>
-    <textarea name="body_th" placeholder="body markdown (th)"></textarea>
-    <label><input type="checkbox" name="published" checked> published</label>
-    <div class="bar">
-      <button type="submit">Save</button>
-      <button type="button" id="del" style="color:#c33">Delete</button>
-    </div>
-  </form>
+  <div class="tabs">
+    <button data-tab="posts" class="is-active">📝 Posts</button>
+    <button data-tab="comments">💬 Comments</button>
+    <button data-tab="orders">🛒 Orders</button>
+    <button data-tab="users">👥 Users</button>
+    <button data-tab="donations">💝 Donations</button>
+  </div>
 
-  <div class="list" id="list"></div>
-</main>
+  <!-- POSTS -->
+  <div class="panel is-active" data-panel="posts">
+    <div class="toolbar">
+      <button class="btn" id="p-new">+ New Post</button>
+      <button class="btn btn--ghost" id="p-reload">↻ Reload</button>
+    </div>
+    <div class="card">
+      <form id="p-form">
+        <div class="row">
+          <div><label>slug</label><input name="slug" required></div>
+          <div><label>date</label><input name="date" type="date" required></div>
+        </div>
+        <div class="row">
+          <div><label>categories (คั่นด้วย ,)</label><input name="categories"></div>
+          <div><label>icon emoji</label><input name="icon"></div>
+        </div>
+        <div class="row">
+          <div><label>cover URL</label><input name="cover"></div>
+          <div><label>video embed URL</label><input name="video"></div>
+        </div>
+        <div class="row">
+          <div><label>title (vi)</label><input name="title_vi" required></div>
+          <div><label>title (th)</label><input name="title_th" required></div>
+        </div>
+        <div class="row">
+          <div><label>desc (vi)</label><input name="desc_vi"></div>
+          <div><label>desc (th)</label><input name="desc_th"></div>
+        </div>
+        <div><label>body markdown (vi)</label><textarea name="body_vi"></textarea></div>
+        <div><label>body markdown (th)</label><textarea name="body_th"></textarea></div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <label class="checkbox"><input type="checkbox" name="published" checked> เผยแพร่</label>
+          <label class="checkbox"><input type="checkbox" name="members_only"> สำหรับสมาชิกเท่านั้น 🔒</label>
+        </div>
+        <div class="toolbar">
+          <button class="btn" type="submit">💾 Save</button>
+          <button class="btn btn--danger" type="button" id="p-del">🗑 Delete</button>
+        </div>
+      </form>
+    </div>
+    <div id="p-list"></div>
+  </div>
+
+  <!-- COMMENTS -->
+  <div class="panel" data-panel="comments">
+    <div class="toolbar"><button class="btn btn--ghost" id="c-reload">↻ Reload</button></div>
+    <div id="c-list"></div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="panel" data-panel="orders">
+    <div class="toolbar"><button class="btn btn--ghost" id="o-reload">↻ Reload</button></div>
+    <div id="o-list"></div>
+  </div>
+
+  <!-- USERS -->
+  <div class="panel" data-panel="users">
+    <div class="toolbar"><button class="btn btn--ghost" id="u-reload">↻ Reload</button></div>
+    <div id="u-list"></div>
+  </div>
+
+  <!-- DONATIONS -->
+  <div class="panel" data-panel="donations">
+    <div class="toolbar"><button class="btn btn--ghost" id="d-reload">↻ Reload</button></div>
+    <div id="d-list"></div>
+  </div>
+</div>
 
 <script src="content/config.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
 const cfg = window.YP_CONFIG||{};
 const $ = s => document.querySelector(s);
-const f = $('#f'), status = $('#status');
-const busy = on => { $('#overlay').hidden = !on; };
+const $$ = s => document.querySelectorAll(s);
+const f = $('#p-form'), status = $('#status');
 const keyLS = 'yp:adminKey';
-$('#key').value = localStorage.getItem(keyLS) || '';
-$('#key').addEventListener('change', e => localStorage.setItem(keyLS, e.target.value));
+let DATA = null;
 
+const busy = on => { $('#overlay').hidden = !on; };
+const setStatus = (msg, cls='') => { status.innerHTML = msg ? (cls==='spin'?`<span class="yp-spinner"></span> ${msg}`:msg) : ''; };
+const escapeHtml = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const keyVal = () => ($('#key').value || '').trim();
+
+// init key from localStorage
+$('#key').value = localStorage.getItem(keyLS) || '';
+$('#key').addEventListener('input', e => localStorage.setItem(keyLS, e.target.value.trim()));
+$('#logout').onclick = () => { localStorage.removeItem(keyLS); $('#key').value=''; setStatus('ออกแล้ว'); };
+
+// tabs
+$$('.tabs button').forEach(btn => btn.onclick = () => {
+  $$('.tabs button').forEach(b => b.classList.toggle('is-active', b===btn));
+  $$('.panel').forEach(p => p.classList.toggle('is-active', p.dataset.panel===btn.dataset.tab));
+});
+
+/* ===== Load all ===== */
+async function loadAll(){
+  if (!cfg.API_URL) return setStatus('ตั้ง API_URL ก่อน', 'err');
+  if (!keyVal()) return setStatus('ใส่ admin key', 'err');
+  setStatus('loading…', 'spin'); busy(true);
+  try {
+    const r = await fetch(cfg.API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action:'admin_listall', key: keyVal()})
+    });
+    DATA = await r.json();
+    if (DATA.error){ setStatus('error: '+DATA.error); return; }
+    renderPosts(); renderComments(); renderOrders(); renderUsers(); renderDonations();
+    setStatus(`${DATA.posts.length} posts · ${DATA.comments.length} comments · ${DATA.orders.length} orders`);
+  } catch(e){ setStatus('network error'); }
+  finally { busy(false); }
+}
+$('#login').onclick = loadAll;
+$('#p-reload').onclick = loadAll;
+$('#c-reload').onclick = loadAll;
+$('#o-reload').onclick = loadAll;
+$('#u-reload').onclick = loadAll;
+$('#d-reload').onclick = loadAll;
+
+/* ===== Posts ===== */
 function setForm(p){
-  p = p || {date:new Date().toISOString().slice(0,10), published:true};
+  p = p || {date:new Date().toISOString().slice(0,10), published:true, members_only:false};
   for (const el of f.elements) {
     if (!el.name) continue;
-    if (el.type === 'checkbox') el.checked = p[el.name] !== false && p[el.name] !== 'false';
-    else el.value = Array.isArray(p[el.name]) ? p[el.name].join(',') : (p[el.name] ?? '');
+    if (el.type === 'checkbox') {
+      const v = p[el.name];
+      el.checked = v === true || (v !== false && String(v).toLowerCase() !== 'false' && el.name === 'published');
+      if (el.name === 'members_only') el.checked = v === true || String(v).toLowerCase() === 'true';
+    } else el.value = Array.isArray(p[el.name]) ? p[el.name].join(',') : (p[el.name] ?? '');
   }
 }
 function getForm(){
@@ -89,58 +226,148 @@ function getForm(){
   o.categories = String(o.categories||'').split(',').map(s=>s.trim()).filter(Boolean);
   return o;
 }
-
-async function load(){
-  if (!cfg.API_URL) return status.textContent = 'ตั้ง API_URL ใน content/config.js ก่อน';
-  $('#list').innerHTML = Array(3).fill(`<div class="yp-skel yp-skel--line" style="height:48px"></div>`).join('');
-  status.innerHTML = `<span class="yp-spinner"></span> loading…`;
-  busy(true);
-  try {
-    const r = await fetch(cfg.API_URL + '?action=posts');
-    const list = await r.json();
-    $('#list').innerHTML = list.map(p => `
-      <div class="item yp-fade-in">
-        <div><strong>${p.slug}</strong> <span class="muted">${p.date} · ${(p.categories||[]).join(', ')}</span><br>
-          <span class="muted">${p.title_vi||''} / ${p.title_th||''}</span></div>
-        <button data-edit='${encodeURIComponent(JSON.stringify(p))}'>Edit</button>
-      </div>`).join('');
-    status.textContent = list.length + ' posts';
-  } catch(e){ status.textContent = 'error'; }
-  finally { busy(false); }
+function renderPosts(){
+  $('#p-list').innerHTML = (DATA.posts||[]).map(p => {
+    const pub = p.published === true || String(p.published).toLowerCase() !== 'false';
+    const mem = p.members_only === true || String(p.members_only).toLowerCase() === 'true';
+    return `<div class="item yp-fade-in">
+      <div>
+        <strong>${escapeHtml(p.slug)}</strong>
+        ${pub ? '<span class="pill pill--ok">published</span>' : '<span class="pill pill--warn">hidden</span>'}
+        ${mem ? '<span class="pill">members</span>' : ''}
+        <br><span class="muted">${p.date} · ${escapeHtml(p.categories||'')} · ${escapeHtml(p.title_vi||'')}</span>
+      </div>
+      <button class="btn btn--sm btn--ghost" data-edit='${encodeURIComponent(JSON.stringify(p))}'>✏️ Edit</button>
+    </div>`;
+  }).join('');
 }
-$('#list').addEventListener('click', e => {
+$('#p-list').addEventListener('click', e => {
   const b = e.target.closest('[data-edit]');
   if (!b) return;
   setForm(JSON.parse(decodeURIComponent(b.dataset.edit)));
   scrollTo({top:0,behavior:'smooth'});
 });
-$('#load').onclick = load;
-$('#new').onclick  = () => setForm();
-
+$('#p-new').onclick = () => setForm();
 f.addEventListener('submit', async e => {
   e.preventDefault();
-  const key = $('#key').value.trim();
-  if (!key) return status.textContent = 'ใส่ admin key';
+  if (!keyVal()) return setStatus('ใส่ admin key');
   busy(true);
   try {
-    const r = await window.YP_API.upsertPost(key, getForm());
-    status.textContent = r.error ? ('error: '+r.error) : ('saved: '+r.slug);
-    if (r.ok) await load();
+    const r = await window.YP_API.upsertPost(keyVal(), getForm());
+    setStatus(r.error ? 'error: '+r.error : 'saved: '+r.slug);
+    if (r.ok) await loadAll();
   } finally { busy(false); }
 });
-$('#del').onclick = async () => {
+$('#p-del').onclick = async () => {
   const slug = f.slug.value.trim();
   if (!slug || !confirm('Delete '+slug+'?')) return;
   busy(true);
   try {
-    const r = await window.YP_API.deletePost($('#key').value.trim(), slug);
-    status.textContent = r.error ? ('error: '+r.error) : 'deleted';
-    if (r.ok){ setForm(); await load(); }
+    const r = await window.YP_API.deletePost(keyVal(), slug);
+    setStatus(r.error ? 'error: '+r.error : 'deleted');
+    if (r.ok){ setForm(); await loadAll(); }
   } finally { busy(false); }
 };
 
+/* ===== Comments ===== */
+function renderComments(){
+  $('#c-list').innerHTML = (DATA.comments||[]).map(c => `
+    <div class="item yp-fade-in">
+      <div>
+        <strong>${escapeHtml(c.name)}</strong> on <em>${escapeHtml(c.slug)}</em>
+        ${String(c.approved).toLowerCase()==='false' ? '<span class="pill pill--warn">รออนุมัติ</span>' : '<span class="pill pill--ok">ok</span>'}
+        <br><span class="muted">${new Date(+c.ts).toLocaleString()}</span>
+        <div style="margin-top:4px">${escapeHtml(c.msg)}</div>
+      </div>
+      <div style="display:flex;gap:4px;flex-direction:column">
+        ${String(c.approved).toLowerCase()==='false' ? `<button class="btn btn--sm" data-approve="${c.ts}">✓</button>` : ''}
+        <button class="btn btn--sm btn--danger" data-delc='${c.ts}|${escapeHtml(c.slug)}'>🗑</button>
+      </div>
+    </div>`).join('') || '<p class="muted">ไม่มี comment</p>';
+}
+$('#c-list').addEventListener('click', async e => {
+  const ap = e.target.closest('[data-approve]');
+  const dl = e.target.closest('[data-delc]');
+  busy(true);
+  try {
+    if (ap){
+      const r = await fetch(cfg.API_URL, {method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'admin_approve', key:keyVal(), ts:+ap.dataset.approve, approved:true})});
+      const j = await r.json(); if(j.ok) await loadAll();
+    } else if (dl){
+      if (!confirm('ลบ comment นี้?')) return;
+      const [ts, slug] = dl.dataset.delc.split('|');
+      const r = await fetch(cfg.API_URL, {method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'admin_delcomment', key:keyVal(), ts:+ts, slug})});
+      const j = await r.json(); if(j.ok) await loadAll();
+    }
+  } finally { busy(false); }
+});
+
+/* ===== Orders ===== */
+function renderOrders(){
+  $('#o-list').innerHTML = (DATA.orders||[]).map(o => {
+    const stCls = o.status==='paid'?'pill--ok':o.status==='awaiting_review'?'pill--warn':'pill';
+    return `<div class="item yp-fade-in">
+      <div>
+        <strong>${escapeHtml(o.item_title||o.item_id)}</strong> — ${o.amount} ${o.currency||'THB'}
+        <span class="pill ${stCls}">${o.status}</span>
+        <br><span class="muted">${escapeHtml(o.email)} · ${new Date(+o.created_at).toLocaleString()}</span>
+        ${o.slip_url ? `<br><a href="${escapeHtml(o.slip_url)}" target="_blank" class="muted">📎 ดูสลิป</a>` : ''}
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${o.status!=='paid' ? `<button class="btn btn--sm" data-paid="${o.order_id}">✓ ยืนยันจ่าย</button>` : ''}
+        ${o.status!=='cancelled' ? `<button class="btn btn--sm btn--warn" data-cancel="${o.order_id}">✗ ยกเลิก</button>` : ''}
+      </div>
+    </div>`;
+  }).join('') || '<p class="muted">ยังไม่มี order</p>';
+}
+$('#o-list').addEventListener('click', async e => {
+  const paid = e.target.closest('[data-paid]');
+  const cancel = e.target.closest('[data-cancel]');
+  if (!paid && !cancel) return;
+  const order_id = (paid||cancel).dataset.paid || (paid||cancel).dataset.cancel;
+  const status = paid ? 'paid' : 'cancelled';
+  if (!confirm(`เปลี่ยนสถานะเป็น ${status}?`)) return;
+  busy(true);
+  try {
+    const r = await fetch(cfg.API_URL, {method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action:'order_status', key:keyVal(), order_id, status})});
+    const j = await r.json(); if(j.ok) await loadAll();
+    else setStatus('error: '+j.error);
+  } finally { busy(false); }
+});
+
+/* ===== Users ===== */
+function renderUsers(){
+  $('#u-list').innerHTML = (DATA.users||[]).map(u => `
+    <div class="item yp-fade-in">
+      <div>
+        ${u.avatar ? `<img src="${escapeHtml(u.avatar)}" style="width:32px;height:32px;border-radius:50%;vertical-align:middle">` : ''}
+        <strong>${escapeHtml(u.name||u.email)}</strong>
+        <span class="pill">${escapeHtml(u.provider)}</span>
+        <br><span class="muted">${escapeHtml(u.email)} · สมัคร ${new Date(+u.created_at).toLocaleDateString()}</span>
+      </div>
+    </div>`).join('') || '<p class="muted">ยังไม่มีสมาชิก</p>';
+}
+
+/* ===== Donations ===== */
+function renderDonations(){
+  const total = (DATA.donations||[]).reduce((s,d)=>s+(+d.amount||0),0);
+  $('#d-list').innerHTML = `<div class="card"><strong>รวมทั้งหมด:</strong> ${total.toLocaleString()} THB</div>` +
+    (DATA.donations||[]).map(d => `
+    <div class="item yp-fade-in">
+      <div>
+        <strong>${escapeHtml(d.name||'ไม่ระบุ')}</strong> — ${(+d.amount).toLocaleString()} THB
+        <span class="pill">${escapeHtml(d.channel)}</span>
+        <br><span class="muted">${new Date(+d.ts).toLocaleString()} · ${escapeHtml(d.note||'')}</span>
+      </div>
+    </div>`).join('');
+}
+
+// init
 setForm();
-if (cfg.API_URL) load();
+if (keyVal()) loadAll();
 </script>
 </body>
 </html>
