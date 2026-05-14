@@ -71,22 +71,26 @@ function doPost(e){
   return doPostBody_(b);
 }
 function doPostBody_(b){
-  const a = (b.action||'').toLowerCase();
-  if (a === 'comment')       return json_(addComment_(b));
-  if (a === 'post')          return json_(adminUpsertPost_(b));
-  if (a === 'delete')        return json_(adminDeletePost_(b));
-  if (a === 'admin_listall') return json_(adminListAll_(b));
-  if (a === 'admin_delcomment') return json_(adminDelComment_(b));
-  if (a === 'admin_approve')    return json_(adminApprove_(b));
-  if (a === 'magic_send')    return json_(magicSend_(b));
-  if (a === 'magic_verify')  return json_(magicVerifyApi_(b));
-  if (a === 'fb_login')      return json_(fbLogin_(b));
-  if (a === 'logout')        return json_(logout_(b));
-  if (a === 'order_create')  return json_(orderCreate_(b));
-  if (a === 'order_slip')    return json_(orderSubmitSlip_(b));
-  if (a === 'order_status')  return json_(adminOrderStatus_(b));
-  if (a === 'donate_log')    return json_(donateLog_(b));
-  return json_({error:'unknown action'});
+  try {
+    const a = (b.action||'').toLowerCase();
+    if (a === 'comment')       return json_(addComment_(b));
+    if (a === 'post')          return json_(adminUpsertPost_(b));
+    if (a === 'delete')        return json_(adminDeletePost_(b));
+    if (a === 'admin_listall') return json_(adminListAll_(b));
+    if (a === 'admin_delcomment') return json_(adminDelComment_(b));
+    if (a === 'admin_approve')    return json_(adminApprove_(b));
+    if (a === 'magic_send')    return json_(magicSend_(b));
+    if (a === 'magic_verify')  return json_(magicVerifyApi_(b));
+    if (a === 'fb_login')      return json_(fbLogin_(b));
+    if (a === 'logout')        return json_(logout_(b));
+    if (a === 'order_create')  return json_(orderCreate_(b));
+    if (a === 'order_slip')    return json_(orderSubmitSlip_(b));
+    if (a === 'order_status')  return json_(adminOrderStatus_(b));
+    if (a === 'donate_log')    return json_(donateLog_(b));
+    return json_({error:'unknown action: ' + a});
+  } catch(e){
+    return json_({error: 'server: ' + (e.message||e), stack: String(e.stack||'').slice(0,500)});
+  }
 }
 
 /* ===== Helpers ===== */
@@ -183,26 +187,39 @@ function adminApprove_(b){
 
 /* ===== Magic Link (Email) ===== */
 function magicSend_(b){
-  const email = String(b.email||'').trim().toLowerCase();
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return {error:'invalid email'};
-  // สร้าง OTP 6 หลัก (ใช้กรอกในเว็บ) + token (ใช้ใน magic link fallback)
-  const otp = String(Math.floor(100000 + Math.random()*900000));
-  const exp = now_() + MAGIC_TTL_MIN*60*1000;
-  sheet_(SH.magic).appendRow([otp, email, now_(), exp, false]);
   try {
+    const email = String(b.email||'').trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return {error:'invalid email'};
+
+    // ensure sheet exists (กันลืม run setup)
+    let sh = sheet_(SH.magic);
+    if (!sh) {
+      ss_().insertSheet(SH.magic).appendRow(['token','email','created_at','expires_at','used']);
+      sh = sheet_(SH.magic);
+    }
+
+    const otp = String(Math.floor(100000 + Math.random()*900000));
+    const exp = now_() + MAGIC_TTL_MIN*60*1000;
+    sh.appendRow([otp, email, now_(), exp, false]);
+
+    // check Gmail quota ก่อนส่ง
+    const remaining = MailApp.getRemainingDailyQuota();
+    if (remaining < 1) return {error:'mail quota exceeded (try again tomorrow)'};
+
     MailApp.sendEmail({
       to: email,
-      subject: '[ygiaphan] รหัสยืนยัน / Mã xác nhận: ' + otp,
-      htmlBody: `
-        <div style="font:16px system-ui;max-width:480px;margin:0 auto;padding:20px">
-          <h2 style="color:#2d8a4e">รหัสเข้าสู่ระบบ / Mã đăng nhập</h2>
-          <p>ใช้รหัสนี้กรอกในเว็บไซต์ (มีอายุ ${MAGIC_TTL_MIN} นาที):</p>
-          <div style="background:#e8f5dd;color:#2d8a4e;font-size:32px;font-weight:700;letter-spacing:8px;padding:20px;border-radius:12px;text-align:center;margin:20px 0">${otp}</div>
-          <p style="color:#888;font-size:12px">ถ้าคุณไม่ได้ขอรหัสนี้ ไม่ต้องทำอะไร</p>
-        </div>`
+      subject: '[ygiaphan] รหัสยืนยัน: ' + otp,
+      htmlBody: '<div style="font:16px system-ui;max-width:480px;margin:0 auto;padding:20px">' +
+        '<h2 style="color:#2d8a4e">รหัสเข้าสู่ระบบ / Mã đăng nhập</h2>' +
+        '<p>ใช้รหัสนี้กรอกในเว็บไซต์ (มีอายุ ' + MAGIC_TTL_MIN + ' นาที):</p>' +
+        '<div style="background:#e8f5dd;color:#2d8a4e;font-size:32px;font-weight:700;letter-spacing:8px;padding:20px;border-radius:12px;text-align:center;margin:20px 0">' + otp + '</div>' +
+        '<p style="color:#888;font-size:12px">ถ้าคุณไม่ได้ขอรหัสนี้ ไม่ต้องทำอะไร</p>' +
+        '</div>'
     });
-  } catch(e){ return {error:'mail failed: '+e}; }
-  return {ok:true};
+    return {ok:true, quota_left: remaining-1};
+  } catch(e){
+    return {error: 'magic_send error: ' + (e.message||e)};
+  }
 }
 function magicVerifyApi_(b){
   const email = String(b.email||'').trim().toLowerCase();
