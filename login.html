@@ -35,7 +35,10 @@
 <div data-include="header"></div>
 
 <main class="login-wrap">
-  <div class="login-card" id="loginCard">
+  <div class="login-card" id="loadingCard" style="text-align:center">
+    <span class="yp-spinner"></span> กำลังโหลด…
+  </div>
+  <div class="login-card" id="loginCard" hidden>
     <h1>🌿 เข้าสู่ระบบ</h1>
     <p class="sub">รับ comment, ซื้อคอร์ส, ติดตามคำสั่งซื้อของคุณ</p>
 
@@ -92,13 +95,22 @@ if (params.get('session')){
 
 // 2) ถ้า login อยู่แล้ว → แสดงโปรไฟล์
 async function refreshMe(){
+  const hasToken = window.YP_AUTH.isLogin();
+  if (!hasToken){
+    $('#loadingCard').hidden = true;
+    $('#loginCard').hidden = false;
+    return;
+  }
   const me = await window.YP_AUTH.me();
+  $('#loadingCard').hidden = true;
   if (me && me.ok){
-    $('#loginCard').hidden = true;
     $('#meCard').hidden = false;
     $('#meAvatar').src = me.user.avatar || 'assets/img/favicon.svg';
     $('#meName').textContent = me.user.name || me.user.email;
     $('#meEmail').textContent = me.user.email;
+  } else {
+    window.YP_AUTH.setToken('');
+    $('#loginCard').hidden = false;
   }
 }
 refreshMe();

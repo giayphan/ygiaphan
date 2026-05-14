@@ -279,7 +279,9 @@ function renderComments(){
   $('#c-list').innerHTML = (DATA.comments||[]).map(c => `
     <div class="item yp-fade-in">
       <div>
-        <strong>${escapeHtml(c.name)}</strong> on <em>${escapeHtml(c.slug)}</em>
+        <strong>${escapeHtml(c.name)}</strong>
+        ${c.user_email ? `<span class="pill">✉️ ${escapeHtml(c.user_email)}</span>` : '<span class="pill pill--warn">guest</span>'}
+        on <em>${escapeHtml(c.slug)}</em>
         ${String(c.approved).toLowerCase()==='false' ? '<span class="pill pill--warn">รออนุมัติ</span>' : '<span class="pill pill--ok">ok</span>'}
         <br><span class="muted">${new Date(+c.ts).toLocaleString()}</span>
         <div style="margin-top:4px">${escapeHtml(c.msg)}</div>

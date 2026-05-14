@@ -412,12 +412,18 @@ function donateLog_(b){
 /* ===== Admin: list all (posts/comments/orders/users) ===== */
 function adminListAll_(b){
   if (!isAdmin_(b.key)) return {error:'unauthorized'};
+  const users = rowsAsObjects_(sheet_(SH.users));
+  const userMap = {};
+  users.forEach(u => { if (u.user_id) userMap[u.user_id] = {email:u.email, name:u.name, avatar:u.avatar}; });
+  const comments = rowsAsObjects_(sheet_(SH.comments))
+    .sort((a,b)=>b.ts-a.ts).slice(0,200)
+    .map(c => ({...c, user_email: c.user_id && userMap[c.user_id] ? userMap[c.user_id].email : ''}));
   return {
     ok:true,
     posts: rowsAsObjects_(sheet_(SH.posts)),
-    comments: rowsAsObjects_(sheet_(SH.comments)).sort((a,b)=>b.ts-a.ts).slice(0,200),
+    comments,
     orders: rowsAsObjects_(sheet_(SH.orders)).sort((a,b)=>b.created_at-a.created_at).slice(0,200),
-    users: rowsAsObjects_(sheet_(SH.users)).slice(-200),
+    users: users.slice(-200),
     donations: rowsAsObjects_(sheet_(SH.donations)).sort((a,b)=>b.ts-a.ts).slice(0,200)
   };
 }
