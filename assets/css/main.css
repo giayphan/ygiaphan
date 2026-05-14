@@ -1,4 +1,36 @@
 /* ygiaphan — kawaii pastel theme 🌸 */
+
+/* ---------- Loading: skeleton + spinner ---------- */
+@keyframes yp-shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+@keyframes yp-spin    { to { transform: rotate(360deg); } }
+@keyframes yp-fadein  { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+
+.yp-skel{
+  background:linear-gradient(90deg,#f3e9f3 0%,#fff3f7 50%,#f3e9f3 100%);
+  background-size:800px 100%;
+  animation:yp-shimmer 1.2s linear infinite;
+  border-radius:10px;
+  color:transparent!important;
+}
+.yp-skel--card{height:240px;border-radius:14px}
+.yp-skel--line{height:14px;margin:8px 0}
+.yp-skel--title{height:22px;width:60%;margin:10px 0}
+
+.yp-spinner{
+  display:inline-block;width:18px;height:18px;border-radius:50%;
+  border:2px solid #f3c6dd;border-top-color:#d6336c;
+  animation:yp-spin .8s linear infinite;vertical-align:-3px;
+}
+.yp-loading{display:inline-flex;gap:8px;align-items:center;color:#a06;font-size:.9em}
+
+.yp-fade-in{animation:yp-fadein .35s ease both}
+
+.yp-overlay{
+  position:fixed;inset:0;background:rgba(255,250,253,.7);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  z-index:9999;backdrop-filter:blur(2px);
+}
+.yp-overlay[hidden]{display:none}
 :root{
   --sky:#bfe3ff; --sky-soft:#e8f5ff; --sky-deep:#7ec1ee;
   --pink:#ffc4dd; --pink-soft:#ffe9f2; --pink-deep:#f48fb1;

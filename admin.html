@@ -18,6 +18,7 @@
 </style>
 </head>
 <body>
+<div class="yp-overlay" id="overlay" hidden><span class="yp-spinner"></span><span>กำลังทำงาน…</span></div>
 <main class="admin">
   <h1>Admin</h1>
   <div class="bar">
@@ -66,6 +67,7 @@
 const cfg = window.YP_CONFIG||{};
 const $ = s => document.querySelector(s);
 const f = $('#f'), status = $('#status');
+const busy = on => { $('#overlay').hidden = !on; };
 const keyLS = 'yp:adminKey';
 $('#key').value = localStorage.getItem(keyLS) || '';
 $('#key').addEventListener('change', e => localStorage.setItem(keyLS, e.target.value));
@@ -90,16 +92,21 @@ function getForm(){
 
 async function load(){
   if (!cfg.API_URL) return status.textContent = 'ตั้ง API_URL ใน content/config.js ก่อน';
-  status.textContent = 'loading…';
-  const r = await fetch(cfg.API_URL + '?action=posts');
-  const list = await r.json();
-  $('#list').innerHTML = list.map(p => `
-    <div class="item">
-      <div><strong>${p.slug}</strong> <span class="muted">${p.date} · ${(p.categories||[]).join(', ')}</span><br>
-        <span class="muted">${p.title_vi||''} / ${p.title_th||''}</span></div>
-      <button data-edit='${encodeURIComponent(JSON.stringify(p))}'>Edit</button>
-    </div>`).join('');
-  status.textContent = list.length + ' posts';
+  $('#list').innerHTML = Array(3).fill(`<div class="yp-skel yp-skel--line" style="height:48px"></div>`).join('');
+  status.innerHTML = `<span class="yp-spinner"></span> loading…`;
+  busy(true);
+  try {
+    const r = await fetch(cfg.API_URL + '?action=posts');
+    const list = await r.json();
+    $('#list').innerHTML = list.map(p => `
+      <div class="item yp-fade-in">
+        <div><strong>${p.slug}</strong> <span class="muted">${p.date} · ${(p.categories||[]).join(', ')}</span><br>
+          <span class="muted">${p.title_vi||''} / ${p.title_th||''}</span></div>
+        <button data-edit='${encodeURIComponent(JSON.stringify(p))}'>Edit</button>
+      </div>`).join('');
+    status.textContent = list.length + ' posts';
+  } catch(e){ status.textContent = 'error'; }
+  finally { busy(false); }
 }
 $('#list').addEventListener('click', e => {
   const b = e.target.closest('[data-edit]');
@@ -114,16 +121,22 @@ f.addEventListener('submit', async e => {
   e.preventDefault();
   const key = $('#key').value.trim();
   if (!key) return status.textContent = 'ใส่ admin key';
-  const r = await window.YP_API.upsertPost(key, getForm());
-  status.textContent = r.error ? ('error: '+r.error) : ('saved: '+r.slug);
-  if (r.ok) load();
+  busy(true);
+  try {
+    const r = await window.YP_API.upsertPost(key, getForm());
+    status.textContent = r.error ? ('error: '+r.error) : ('saved: '+r.slug);
+    if (r.ok) await load();
+  } finally { busy(false); }
 });
 $('#del').onclick = async () => {
   const slug = f.slug.value.trim();
   if (!slug || !confirm('Delete '+slug+'?')) return;
-  const r = await window.YP_API.deletePost($('#key').value.trim(), slug);
-  status.textContent = r.error ? ('error: '+r.error) : 'deleted';
-  if (r.ok){ setForm(); load(); }
+  busy(true);
+  try {
+    const r = await window.YP_API.deletePost($('#key').value.trim(), slug);
+    status.textContent = r.error ? ('error: '+r.error) : 'deleted';
+    if (r.ok){ setForm(); await load(); }
+  } finally { busy(false); }
 };
 
 setForm();

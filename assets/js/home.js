@@ -1,5 +1,9 @@
 (async () => {
+  const gridEl = document.querySelector('[data-posts]');
   if (window.YP_API && window.YP_API.on) {
+    if (gridEl) gridEl.innerHTML = Array(6).fill(
+      `<div class="card yp-skel yp-skel--card"></div>`
+    ).join('');
     try { await window.YP_API.loadPosts(); } catch(e){ console.warn('API load failed', e); }
   }
   const T = window.YP_T || {};
@@ -49,6 +53,7 @@
   const render = (filter) => {
     const list = filter ? posts.filter(p => p.categories.includes(filter)) : posts;
     grid.innerHTML = list.map(window.postCard).join('');
+    grid.classList.remove('yp-fade-in'); void grid.offsetWidth; grid.classList.add('yp-fade-in');
   };
   render('');
   filters.addEventListener('click', e => {

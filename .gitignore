@@ -1,0 +1,17 @@
+_site/
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
+Gemfile.lock
+.DS_Store
+Thumbs.db
+node_modules/
+vendor/
+.vscode/
+.idea/
+*.log
+
+# ไม่ push (ส่วนตัว/ไม่ใช้ตอน deploy)
+gas/                 # โค้ด Apps Script — เอาไป paste ใน script.google.com เอง
+*.bak
+*.tmp

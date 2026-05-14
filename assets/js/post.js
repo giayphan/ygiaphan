@@ -5,6 +5,12 @@
   if (!slug){ root.innerHTML = `<p>${T.not_found||'Not found'}</p>`; return; }
 
   if (window.YP_API && window.YP_API.on) {
+    root.innerHTML = `
+      <div class="yp-skel yp-skel--title"></div>
+      <div class="yp-skel yp-skel--line"></div>
+      <div class="yp-skel yp-skel--line" style="width:90%"></div>
+      <div class="yp-skel yp-skel--line" style="width:70%"></div>
+      <div class="yp-skel yp-skel--card" style="margin-top:16px"></div>`;
     try { await window.YP_API.loadPosts(); } catch(e){ console.warn('API load failed', e); }
   }
   const meta = (window.YP_POSTS||{})[slug];
@@ -78,14 +84,20 @@
 
     const name = f.name.value.trim().slice(0,50);
     const msg  = f.msg.value.trim().slice(0,2000);
-    if (window.YP_API && window.YP_API.on) {
-      try { await window.YP_API.addComment(slug, name, msg); }
-      catch(_){ showErr(errEl, 'Network'); return; }
-    } else {
-      addComment(slug, { name, msg, ts: Date.now() });
-    }
-    f.reset();
-    await renderComments(slug);
+    const btn  = f.querySelector('button[type=submit]');
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="yp-spinner"></span> …`;
+    try {
+      if (window.YP_API && window.YP_API.on) {
+        await window.YP_API.addComment(slug, name, msg);
+      } else {
+        addComment(slug, { name, msg, ts: Date.now() });
+      }
+      f.reset();
+      await renderComments(slug);
+    } catch(_){ showErr(errEl, 'Network'); }
+    finally { btn.disabled = false; btn.innerHTML = orig; }
     const c2 = makeCaptcha();
     f.querySelector('.captcha strong').textContent = c2.q;
     captcha.q = c2.q; captcha.a = c2.a;
@@ -104,18 +116,19 @@ function commentsKey(slug){ return `yp:c:${slug}`; }
 function getComments(slug){ try{return JSON.parse(localStorage.getItem(commentsKey(slug))||'[]');}catch{return [];} }
 function addComment(slug, c){ const a=getComments(slug); a.push(c); localStorage.setItem(commentsKey(slug), JSON.stringify(a)); }
 async function renderComments(slug){
+  const el = document.querySelector('[data-comments]');
   let list = getComments(slug);
   if (window.YP_API && window.YP_API.on) {
+    if (el) el.innerHTML = `<p class="yp-loading"><span class="yp-spinner"></span> …</p>`;
     try {
       const remote = await window.YP_API.listComments(slug);
       list = (remote||[]).map(c => ({name:c.name, msg:c.msg, ts:Number(c.ts)||Date.now()}));
     } catch(_){}
   }
-  const el = document.querySelector('[data-comments]');
   const T = window.YP_T||{};
   if (!list.length){ el.innerHTML = `<p class="muted">${T.comment_empty||'No comments yet'}</p>`; return; }
   el.innerHTML = list.map(c => `
-    <div class="comment">
+    <div class="comment yp-fade-in">
       <div class="comment__head"><strong>${escapeHtml(c.name)}</strong> · <span class="muted">${new Date(c.ts).toLocaleString()}</span></div>
       <div class="comment__body">${escapeHtml(c.msg).replace(/\n/g,'<br>')}</div>
     </div>`).join('');
