@@ -53,7 +53,14 @@ function doGet(e){
 }
 function doPost(e){
   let b = {};
-  try { b = JSON.parse(e.postData.contents||'{}'); } catch(_) {}
+  // รองรับ 2 แบบ: form-encoded (payload=...) หรือ raw JSON
+  try {
+    if (e && e.parameter && e.parameter.payload) {
+      b = JSON.parse(e.parameter.payload);
+    } else if (e && e.postData && e.postData.contents) {
+      b = JSON.parse(e.postData.contents);
+    }
+  } catch(_) {}
   const a = (b.action||'').toLowerCase();
   if (a === 'comment')       return json_(addComment_(b));
   if (a === 'post')          return json_(adminUpsertPost_(b));

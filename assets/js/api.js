@@ -4,18 +4,23 @@
   const ON  = !!(cfg.USE_API && cfg.API_URL);
 
   async function getJSON(url){
-    const r = await fetch(url, {method:'GET'});
+    const r = await fetch(url, {method:'GET', redirect:'follow'});
     return r.json();
   }
+  // simple POST → ไม่ trigger preflight (Apps Script ไม่ส่ง CORS header)
+  // ส่ง body เป็น URLSearchParams (Content-Type: application/x-www-form-urlencoded) — simple request
+  // Apps Script จะอ่านจาก e.parameter.payload
   async function postJSON(body){
-    // ใช้ text/plain เพื่อเลี่ยง CORS preflight ของ Apps Script
+    const form = new URLSearchParams();
+    form.append('payload', JSON.stringify(body));
     const r = await fetch(cfg.API_URL, {
       method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify(body)
+      body: form,
+      redirect:'follow'
     });
     return r.json();
   }
+  window.YP_POST = postJSON;
 
   window.YP_API = {
     on: ON,

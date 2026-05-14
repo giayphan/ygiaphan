@@ -169,6 +169,10 @@ const keyLS = 'yp:adminKey';
 let DATA = null;
 
 const busy = on => { $('#overlay').hidden = !on; };
+const postRaw = (body) => {
+  const f = new URLSearchParams(); f.append('payload', JSON.stringify(body));
+  return fetch(cfg.API_URL, {method:'POST', body:f, redirect:'follow'});
+};
 const setStatus = (msg, cls='') => { status.innerHTML = msg ? (cls==='spin'?`<span class="yp-spinner"></span> ${msg}`:msg) : ''; };
 const escapeHtml = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const keyVal = () => ($('#key').value || '').trim();
@@ -190,12 +194,8 @@ async function loadAll(){
   if (!keyVal()) return setStatus('ใส่ admin key', 'err');
   setStatus('loading…', 'spin'); busy(true);
   try {
-    const r = await fetch(cfg.API_URL, {
-      method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({action:'admin_listall', key: keyVal()})
-    });
-    DATA = await r.json();
+    const rr = await postRaw({action:'admin_listall', key: keyVal()});
+    DATA = await rr.json();
     if (DATA.error){ setStatus('error: '+DATA.error); return; }
     renderPosts(); renderComments(); renderOrders(); renderUsers(); renderDonations();
     setStatus(`${DATA.posts.length} posts · ${DATA.comments.length} comments · ${DATA.orders.length} orders`);
@@ -295,15 +295,13 @@ $('#c-list').addEventListener('click', async e => {
   busy(true);
   try {
     if (ap){
-      const r = await fetch(cfg.API_URL, {method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({action:'admin_approve', key:keyVal(), ts:+ap.dataset.approve, approved:true})});
-      const j = await r.json(); if(j.ok) await loadAll();
+      const j = await (await postRaw({action:'admin_approve', key:keyVal(), ts:+ap.dataset.approve, approved:true})).json();
+      if(j.ok) await loadAll();
     } else if (dl){
       if (!confirm('ลบ comment นี้?')) return;
       const [ts, slug] = dl.dataset.delc.split('|');
-      const r = await fetch(cfg.API_URL, {method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({action:'admin_delcomment', key:keyVal(), ts:+ts, slug})});
-      const j = await r.json(); if(j.ok) await loadAll();
+      const j = await (await postRaw({action:'admin_delcomment', key:keyVal(), ts:+ts, slug})).json();
+      if(j.ok) await loadAll();
     }
   } finally { busy(false); }
 });
@@ -335,9 +333,8 @@ $('#o-list').addEventListener('click', async e => {
   if (!confirm(`เปลี่ยนสถานะเป็น ${status}?`)) return;
   busy(true);
   try {
-    const r = await fetch(cfg.API_URL, {method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({action:'order_status', key:keyVal(), order_id, status})});
-    const j = await r.json(); if(j.ok) await loadAll();
+    const j = await (await postRaw({action:'order_status', key:keyVal(), order_id, status})).json();
+    if(j.ok) await loadAll();
     else setStatus('error: '+j.error);
   } finally { busy(false); }
 });
