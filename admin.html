@@ -218,19 +218,20 @@ const escapeHtml = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<'
 const keyVal = () => ($('#key').value || '').trim();
 
 /* ===== Login flow ===== */
+function show(el, on){ el.hidden = !on; el.style.display = on ? '' : 'none'; }
 function showLogin(msg){
-  $('#loginBox').hidden = false;
-  $('#topbar').hidden = true;
-  $('#adminBody').hidden = true;
+  show($('#loginBox'), true);
+  show($('#topbar'), false);
+  show($('#adminBody'), false);
   $('#otpField').hidden = true; $('#otpField').value='';
   $('#key').value=''; $('#loginBtn').textContent='ส่ง OTP';
   $('#loginHint').textContent = msg || 'OTP จะถูกส่งไปยัง admin email';
   if (expInterval) clearInterval(expInterval);
 }
 function showAdmin(){
-  $('#loginBox').hidden = true;
-  $('#topbar').hidden = false;
-  $('#adminBody').hidden = false;
+  show($('#loginBox'), false);
+  show($('#topbar'), true);
+  show($('#adminBody'), true);
   loadAll();
   startExpTimer();
 }
