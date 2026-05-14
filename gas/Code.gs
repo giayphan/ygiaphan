@@ -44,6 +44,12 @@ function ensureSheet_(ss, name, headers){
 /* ===== Router ===== */
 function doGet(e){
   const a = (e.parameter.action||'posts').toLowerCase();
+  // ถ้ามี ?p=base64(JSON) → ถือเป็น POST-via-GET (CORS workaround)
+  if (e.parameter.p) {
+    let b = {};
+    try { b = JSON.parse(b64decode_(e.parameter.p)); } catch(_) {}
+    return doPostBody_(b);
+  }
   if (a === 'magic_verify') return htmlMagicVerify_(e.parameter.token);
   if (a === 'posts')    return json_(listPosts_(e.parameter.token));
   if (a === 'comments') return json_(listComments_(e.parameter.slug||''));
@@ -51,16 +57,20 @@ function doGet(e){
   if (a === 'me')       return json_(getMe_(e.parameter.token));
   return json_({error:'unknown action'});
 }
+function b64decode_(s){
+  s = String(s).replace(/-/g,'+').replace(/_/g,'/');
+  while (s.length % 4) s += '=';
+  return Utilities.newBlob(Utilities.base64Decode(s)).getDataAsString('UTF-8');
+}
 function doPost(e){
   let b = {};
-  // รองรับ 2 แบบ: form-encoded (payload=...) หรือ raw JSON
   try {
-    if (e && e.parameter && e.parameter.payload) {
-      b = JSON.parse(e.parameter.payload);
-    } else if (e && e.postData && e.postData.contents) {
-      b = JSON.parse(e.postData.contents);
-    }
+    if (e && e.parameter && e.parameter.payload) b = JSON.parse(e.parameter.payload);
+    else if (e && e.postData && e.postData.contents) b = JSON.parse(e.postData.contents);
   } catch(_) {}
+  return doPostBody_(b);
+}
+function doPostBody_(b){
   const a = (b.action||'').toLowerCase();
   if (a === 'comment')       return json_(addComment_(b));
   if (a === 'post')          return json_(adminUpsertPost_(b));

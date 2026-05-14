@@ -169,10 +169,11 @@ const keyLS = 'yp:adminKey';
 let DATA = null;
 
 const busy = on => { $('#overlay').hidden = !on; };
-const postRaw = (body) => {
-  const f = new URLSearchParams(); f.append('payload', JSON.stringify(body));
-  return fetch(cfg.API_URL, {method:'POST', body:f, redirect:'follow'});
-};
+const postRaw = (body) => fetch(cfg.API_URL, {
+  method:'POST',
+  headers:{'Content-Type':'text/plain;charset=utf-8'},
+  body: JSON.stringify(body)
+});
 const setStatus = (msg, cls='') => { status.innerHTML = msg ? (cls==='spin'?`<span class="yp-spinner"></span> ${msg}`:msg) : ''; };
 const escapeHtml = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const keyVal = () => ($('#key').value || '').trim();

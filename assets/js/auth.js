@@ -2,11 +2,10 @@
 (function(){
   const KEY = 'yp:session';
   const cfg = window.YP_CONFIG||{};
-  const post = (body) => {
-    const f = new URLSearchParams();
-    f.append('payload', JSON.stringify(body));
-    return fetch(cfg.API_URL, {method:'POST', body:f, redirect:'follow'}).then(r=>r.json());
-  };
+  const post = (body) => fetch(cfg.API_URL, {
+    method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(body)
+  }).then(r=>r.json());
 
   window.YP_AUTH = {
     token(){ return localStorage.getItem(KEY) || ''; },
