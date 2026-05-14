@@ -1,0 +1,26 @@
+// ภาษาไทย
+window.YP_I18N_TH = {
+  daily_post: "Daily post",
+  daily_hint: "เรียนภาษาวันละนิด",
+  courses_title: "คอร์สเรียน",
+  all: "ทั้งหมด",
+  load_more: "โหลดเพิ่ม",
+  back_home: "← กลับหน้าแรก",
+  views: "ครั้ง",
+  category: "หมวดหมู่",
+  category_all: "หมวดหมู่ทั้งหมด",
+  category_prefix: "หมวด: ",
+  not_found: "ไม่พบบทความ",
+  comments: "ความคิดเห็น",
+  comment_name: "ชื่อของคุณ",
+  comment_msg: "แสดงความคิดเห็น…",
+  comment_send: "ส่ง",
+  comment_empty: "ยังไม่มีความคิดเห็น เป็นคนแรก!",
+  about_title: "เกี่ยวกับเรา",
+  contact_title: "ติดต่อ",
+  courses_page_title: "คอร์สเรียน",
+  courses_page_intro: "เลือกรูปแบบการเรียนที่เหมาะกับคุณ",
+  captcha_q: "เพื่อยืนยันว่าไม่ใช่บอท กรุณาตอบ:",
+  captcha_wrong: "คำตอบไม่ถูก ลองอีกครั้ง",
+  switch_lang: "VI"
+};

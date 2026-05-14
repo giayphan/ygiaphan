@@ -1,0 +1,26 @@
+// ภาษาเวียดนาม (default)
+window.YP_I18N_VI = {
+  daily_post: "Bài học hàng ngày",
+  daily_hint: "Học mỗi ngày một chút",
+  courses_title: "Khóa học",
+  all: "Tất cả",
+  load_more: "Xem thêm",
+  back_home: "← Về trang chủ",
+  views: "lượt xem",
+  category: "Chủ đề",
+  category_all: "Tất cả chủ đề",
+  category_prefix: "Chủ đề: ",
+  not_found: "Không tìm thấy bài viết",
+  comments: "Bình luận",
+  comment_name: "Tên của bạn",
+  comment_msg: "Viết bình luận…",
+  comment_send: "Gửi",
+  comment_empty: "Chưa có bình luận. Hãy là người đầu tiên!",
+  about_title: "Giới thiệu",
+  contact_title: "Liên hệ",
+  courses_page_title: "Khóa học",
+  courses_page_intro: "Chọn hình thức học phù hợp với bạn",
+  captcha_q: "Để xác nhận bạn không phải robot, hãy giải:",
+  captcha_wrong: "Trả lời sai, vui lòng thử lại",
+  switch_lang: "TH"
+};

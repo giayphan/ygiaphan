@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ygiaphan</title>
+<link rel="icon" href="assets/img/favicon.svg">
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<div data-include="header"></div>
+<main class="container">
+  <article class="page">
+    <h1 data-i18n="contact_title"></h1>
+    <p class="vi" data-lang="vi">Có câu hỏi, muốn học, hoặc hợp tác? Liên hệ qua các kênh sau:</p>
+    <p class="th" data-lang="th">มีคำถาม อยากเรียน หรืออยากร่วมงาน ติดต่อได้ทางช่องทางด้านล่าง</p>
+    <ul>
+      <li>Email: <a href="mailto:reawni@gmail.com">reawni@gmail.com</a></li>
+      <li>Facebook: (link)</li>
+      <li>LINE: (ID)</li>
+      <li>YouTube: (link)</li>
+    </ul>
+  </article>
+</main>
+<div data-include="footer"></div>
+
+<script src="content/i18n/vi.js"></script>
+<script src="content/i18n/th.js"></script>
+<script src="content/site.js"></script>
+<script src="content/nav.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+document.querySelector('[data-i18n="contact_title"]').textContent = (window.YP_T||{}).contact_title||'Contact';
+document.querySelectorAll('[data-lang]').forEach(p => p.hidden = (window.YP_LANG !== p.dataset.lang));
+</script>
+</body>
+</html>
