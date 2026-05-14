@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Admin · ygiaphan</title>
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+<meta name="referrer" content="no-referrer">
 <link rel="stylesheet" href="assets/css/main.css">
 <style>
   :root{
@@ -75,13 +77,30 @@
 <div class="ad">
   <h1>🌿 ygiaphan Admin</h1>
 
-  <div class="topbar">
-    <input id="key" type="password" placeholder="🔑 Admin key" style="flex:1;min-width:200px">
-    <button class="btn" id="login">เข้าสู่ระบบ</button>
-    <button class="btn btn--ghost" id="logout">ออก</button>
+  <!-- Login form (ก่อน login) -->
+  <div class="card" id="loginBox">
+    <h3 style="margin-top:0;color:var(--ad-brand)">🔒 เข้าสู่ระบบ Admin</h3>
+    <form id="loginForm" style="display:grid;gap:10px;max-width:400px">
+      <input id="key" type="password" placeholder="🔑 Admin key" required autocomplete="off">
+      <input id="otpField" type="text" placeholder="OTP 6 หลัก (จาก email)" maxlength="6"
+        inputmode="numeric" pattern="[0-9]{6}" hidden autocomplete="off"
+        style="text-align:center;letter-spacing:8px;font-size:1.2rem;font-weight:700">
+      <button class="btn" type="submit" id="loginBtn">ส่ง OTP</button>
+      <p class="muted" style="margin:0;font-size:.85em" id="loginHint">OTP จะถูกส่งไปยัง admin email (ตามที่ตั้งใน Code.gs)</p>
+    </form>
     <span class="status" id="status"></span>
   </div>
 
+  <!-- Topbar (หลัง login) -->
+  <div class="topbar" id="topbar" hidden>
+    <span class="status">✓ logged in as admin</span>
+    <span class="status" id="expTimer" style="margin-left:8px"></span>
+    <span style="flex:1"></span>
+    <button class="btn btn--ghost" id="logout">ออกจากระบบ</button>
+  </div>
+
+  <!-- เนื้อหา admin ทั้งหมด -->
+  <div id="adminBody" hidden>
   <div class="tabs">
     <button data-tab="posts" class="is-active">📝 Posts</button>
     <button data-tab="comments">💬 Comments</button>
@@ -156,6 +175,7 @@
     <div class="toolbar"><button class="btn btn--ghost" id="d-reload">↻ Reload</button></div>
     <div id="d-list"></div>
   </div>
+  </div><!-- /#adminBody -->
 </div>
 
 <script src="content/config.js"></script>
@@ -165,8 +185,22 @@ const cfg = window.YP_CONFIG||{};
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 const f = $('#p-form'), status = $('#status');
-const keyLS = 'yp:adminKey';
+const TOKEN_LS = 'yp:adminToken';
+const FP_LS = 'yp:adminFp';
 let DATA = null;
+let tokenExpAt = 0, expInterval;
+
+// fingerprint: stable per browser+UA — ผูก session กับ device นี้
+function getFp(){
+  let fp = sessionStorage.getItem(FP_LS);
+  if (!fp){
+    const seed = navigator.userAgent + '|' + navigator.language + '|' + screen.width + 'x' + screen.height;
+    let h = 0; for (let i=0;i<seed.length;i++){ h = ((h<<5)-h+seed.charCodeAt(i))|0; }
+    fp = 'fp_'+Math.abs(h).toString(36)+'_'+Math.random().toString(36).slice(2,10);
+    sessionStorage.setItem(FP_LS, fp);
+  }
+  return fp;
+}
 
 const busy = on => { $('#overlay').hidden = !on; };
 const postRaw = (body) => fetch(cfg.API_URL, {
@@ -174,14 +208,99 @@ const postRaw = (body) => fetch(cfg.API_URL, {
   headers:{'Content-Type':'text/plain;charset=utf-8'},
   body: JSON.stringify(body)
 });
+const post = async (body) => {
+  body.admin_token = sessionStorage.getItem(TOKEN_LS) || '';
+  body.fp = getFp();
+  return (await postRaw(body)).json();
+};
 const setStatus = (msg, cls='') => { status.innerHTML = msg ? (cls==='spin'?`<span class="yp-spinner"></span> ${msg}`:msg) : ''; };
 const escapeHtml = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const keyVal = () => ($('#key').value || '').trim();
 
-// init key from localStorage
-$('#key').value = localStorage.getItem(keyLS) || '';
-$('#key').addEventListener('input', e => localStorage.setItem(keyLS, e.target.value.trim()));
-$('#logout').onclick = () => { localStorage.removeItem(keyLS); $('#key').value=''; setStatus('ออกแล้ว'); };
+/* ===== Login flow ===== */
+function showLogin(msg){
+  $('#loginBox').hidden = false;
+  $('#topbar').hidden = true;
+  $('#adminBody').hidden = true;
+  $('#otpField').hidden = true; $('#otpField').value='';
+  $('#key').value=''; $('#loginBtn').textContent='ส่ง OTP';
+  $('#loginHint').textContent = msg || 'OTP จะถูกส่งไปยัง admin email';
+  if (expInterval) clearInterval(expInterval);
+}
+function showAdmin(){
+  $('#loginBox').hidden = true;
+  $('#topbar').hidden = false;
+  $('#adminBody').hidden = false;
+  loadAll();
+  startExpTimer();
+}
+function startExpTimer(){
+  if (expInterval) clearInterval(expInterval);
+  expInterval = setInterval(() => {
+    const sec = Math.max(0, Math.floor((tokenExpAt - Date.now())/1000));
+    const m = Math.floor(sec/60), s = sec%60;
+    $('#expTimer').textContent = sec ? `⏱ ${m}:${String(s).padStart(2,'0')}` : '';
+    if (sec <= 0){
+      sessionStorage.removeItem(TOKEN_LS);
+      showLogin('Session หมดอายุ — กรุณา login ใหม่');
+    }
+  }, 1000);
+}
+
+$('#loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const otpVisible = !$('#otpField').hidden;
+  busy(true);
+  try {
+    let r;
+    if (!otpVisible){
+      r = await post({action:'admin_login', key: keyVal()});
+      if (r.error){ setStatus('✗ ' + r.error); return; }
+      if (r.need_otp){
+        $('#otpField').hidden = false; $('#otpField').focus();
+        $('#loginBtn').textContent = 'ยืนยัน OTP';
+        $('#loginHint').textContent = '✓ ส่ง OTP ไป admin email แล้ว';
+        setStatus('กรอก OTP จาก email');
+        return;
+      }
+      if (r.ok && r.admin_token){
+        sessionStorage.setItem(TOKEN_LS, r.admin_token);
+        tokenExpAt = Date.now() + r.expires_in*1000;
+        showAdmin();
+      }
+    } else {
+      r = await post({action:'admin_login_otp', key: keyVal(), otp: $('#otpField').value.trim()});
+      if (r.error){ setStatus('✗ ' + r.error); return; }
+      if (r.ok && r.admin_token){
+        sessionStorage.setItem(TOKEN_LS, r.admin_token);
+        tokenExpAt = Date.now() + r.expires_in*1000;
+        showAdmin();
+      }
+    }
+  } finally { busy(false); }
+});
+
+$('#logout').onclick = async () => {
+  await post({action:'admin_logout'}).catch(()=>{});
+  sessionStorage.removeItem(TOKEN_LS);
+  showLogin('ออกแล้ว');
+};
+
+// auto-logout เมื่อ tab close / unload
+window.addEventListener('beforeunload', () => {
+  // ไม่ลบ token ที่ server เพื่อให้ refresh tab ยังใช้ได้ แต่ clear ถ้า tab ปิด
+});
+// auto-logout เมื่อ idle เกิน 15 นาที
+let idleTimer;
+const resetIdle = () => {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    sessionStorage.removeItem(TOKEN_LS);
+    showLogin('Idle เกินกำหนด — กรุณา login ใหม่');
+  }, 15*60*1000);
+};
+['mousemove','keydown','click','scroll'].forEach(e => document.addEventListener(e, resetIdle, {passive:true}));
+resetIdle();
 
 // tabs
 $$('.tabs button').forEach(btn => btn.onclick = () => {
@@ -192,18 +311,22 @@ $$('.tabs button').forEach(btn => btn.onclick = () => {
 /* ===== Load all ===== */
 async function loadAll(){
   if (!cfg.API_URL) return setStatus('ตั้ง API_URL ก่อน', 'err');
-  if (!keyVal()) return setStatus('ใส่ admin key', 'err');
   setStatus('loading…', 'spin'); busy(true);
   try {
-    const rr = await postRaw({action:'admin_listall', key: keyVal()});
-    DATA = await rr.json();
-    if (DATA.error){ setStatus('error: '+DATA.error); return; }
+    DATA = await post({action:'admin_listall'});
+    if (DATA.error){
+      if (DATA.error === 'unauthorized' || /lock|session/i.test(DATA.error)){
+        sessionStorage.removeItem(TOKEN_LS);
+        showLogin('Session หมดอายุ — login ใหม่');
+        return;
+      }
+      setStatus('error: '+DATA.error); return;
+    }
     renderPosts(); renderComments(); renderOrders(); renderUsers(); renderDonations();
     setStatus(`${DATA.posts.length} posts · ${DATA.comments.length} comments · ${DATA.orders.length} orders`);
   } catch(e){ setStatus('network error'); }
   finally { busy(false); }
 }
-$('#login').onclick = loadAll;
 $('#p-reload').onclick = loadAll;
 $('#c-reload').onclick = loadAll;
 $('#o-reload').onclick = loadAll;
@@ -255,10 +378,9 @@ $('#p-list').addEventListener('click', e => {
 $('#p-new').onclick = () => setForm();
 f.addEventListener('submit', async e => {
   e.preventDefault();
-  if (!keyVal()) return setStatus('ใส่ admin key');
   busy(true);
   try {
-    const r = await window.YP_API.upsertPost(keyVal(), getForm());
+    const r = await post({action:'post', ...getForm()});
     setStatus(r.error ? 'error: '+r.error : 'saved: '+r.slug);
     if (r.ok) await loadAll();
   } finally { busy(false); }
@@ -268,7 +390,7 @@ $('#p-del').onclick = async () => {
   if (!slug || !confirm('Delete '+slug+'?')) return;
   busy(true);
   try {
-    const r = await window.YP_API.deletePost(keyVal(), slug);
+    const r = await post({action:'delete', slug});
     setStatus(r.error ? 'error: '+r.error : 'deleted');
     if (r.ok){ setForm(); await loadAll(); }
   } finally { busy(false); }
@@ -298,12 +420,12 @@ $('#c-list').addEventListener('click', async e => {
   busy(true);
   try {
     if (ap){
-      const j = await (await postRaw({action:'admin_approve', key:keyVal(), ts:+ap.dataset.approve, approved:true})).json();
+      const j = await post({action:'admin_approve', ts:+ap.dataset.approve, approved:true});
       if(j.ok) await loadAll();
     } else if (dl){
       if (!confirm('ลบ comment นี้?')) return;
       const [ts, slug] = dl.dataset.delc.split('|');
-      const j = await (await postRaw({action:'admin_delcomment', key:keyVal(), ts:+ts, slug})).json();
+      const j = await post({action:'admin_delcomment', ts:+ts, slug});
       if(j.ok) await loadAll();
     }
   } finally { busy(false); }
@@ -336,7 +458,7 @@ $('#o-list').addEventListener('click', async e => {
   if (!confirm(`เปลี่ยนสถานะเป็น ${status}?`)) return;
   busy(true);
   try {
-    const j = await (await postRaw({action:'order_status', key:keyVal(), order_id, status})).json();
+    const j = await post({action:'order_status', order_id, status});
     if(j.ok) await loadAll();
     else setStatus('error: '+j.error);
   } finally { busy(false); }
@@ -369,9 +491,22 @@ function renderDonations(){
     </div>`).join('');
 }
 
-// init
-setForm();
-if (keyVal()) loadAll();
+// init — เช็คว่ามี token อยู่แล้วไหม
+async function init(){
+  setForm();
+  const tk = sessionStorage.getItem(TOKEN_LS);
+  if (!tk){ showLogin(); return; }
+  // validate token
+  const r = await post({action:'admin_check'});
+  if (r.ok){
+    tokenExpAt = Date.now() + 60*60*1000; // approximate, server จะคืน expires_in ตอน login เท่านั้น
+    showAdmin();
+  } else {
+    sessionStorage.removeItem(TOKEN_LS);
+    showLogin();
+  }
+}
+init();
 </script>
 </body>
 </html>

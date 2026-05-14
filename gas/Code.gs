@@ -12,15 +12,21 @@
 
 const SHEET_ID  = 'PUT_YOUR_SHEET_ID_HERE';
 const ADMIN_KEY = 'change-me-please';
-const SITE_URL  = 'https://yourname.github.io/ygiaphan'; // ใช้ใน magic link
-const FB_APP_ID = '';                                    // optional
+const ADMIN_EMAIL = 'admin@example.com';   // รับ OTP 2FA + แจ้งเตือน login
+const SITE_URL  = 'https://yourname.github.io/ygiaphan';
+const FB_APP_ID = '';
 const MAGIC_TTL_MIN = 15;
 const SESSION_TTL_DAYS = 30;
+const ADMIN_TTL_MIN = 60;            // admin session อายุ 1 ชม.
+const ADMIN_MAX_FAILS = 5;           // ผิด 5 ครั้ง = lock
+const ADMIN_LOCK_MIN = 60;           // lock 1 ชม.
+const ADMIN_2FA = true;              // ต้อง OTP จาก email
 
 const SH = {
   posts:'posts', comments:'comments', users:'users',
   sessions:'sessions', orders:'orders', donations:'donations',
-  magic:'magic_tokens', courses:'courses'
+  magic:'magic_tokens', courses:'courses',
+  admin_sessions:'admin_sessions', admin_log:'admin_log', admin_fails:'admin_fails'
 };
 
 // รันฟังก์ชันนี้ครั้งเดียวเพื่อขอ permission ส่งอีเมล
@@ -39,6 +45,9 @@ function setup(){
   ensureSheet_(ss, SH.donations, ['ts','name','amount','channel','note']);
   ensureSheet_(ss, SH.magic, ['token','email','created_at','expires_at','used']);
   ensureSheet_(ss, SH.courses, ['id','price','currency','title_vi','title_th','desc_vi','desc_th','active']);
+  ensureSheet_(ss, SH.admin_sessions, ['token','fingerprint','created_at','expires_at','last_seen']);
+  ensureSheet_(ss, SH.admin_log,      ['ts','action','target','fingerprint','ok','detail']);
+  ensureSheet_(ss, SH.admin_fails,    ['ts','fingerprint','reason']);
 }
 function ensureSheet_(ss, name, headers){
   let sh = ss.getSheetByName(name);
@@ -92,6 +101,10 @@ function doPostBody_(b){
     if (a === 'order_slip')    return json_(orderSubmitSlip_(b));
     if (a === 'order_status')  return json_(adminOrderStatus_(b));
     if (a === 'donate_log')    return json_(donateLog_(b));
+    if (a === 'admin_login')   return json_(adminLogin_(b));
+    if (a === 'admin_login_otp') return json_(adminLoginOtp_(b));
+    if (a === 'admin_logout')    return json_(adminLogoutCall_(b));
+    if (a === 'admin_check')   return json_({ok: !!requireAdmin_(b)});
     return json_({error:'unknown action: ' + a});
   } catch(e){
     return json_({error: 'server: ' + (e.message||e), stack: String(e.stack||'').slice(0,500)});
@@ -115,7 +128,138 @@ function findRow_(sh, key, val){
 function rid_(p){ return (p||'') + Utilities.getUuid().replace(/-/g,'').slice(0,16); }
 function now_(){ return Date.now(); }
 function trimKey_(k){ return String(k||'').replace(/\s+/g,''); }
-function isAdmin_(k){ return trimKey_(k) === trimKey_(ADMIN_KEY); }
+// timing-safe equality
+function safeEq_(a, b){
+  a = String(a||''); b = String(b||'');
+  if (a.length !== b.length) return false;
+  let r = 0;
+  for (let i=0;i<a.length;i++) r |= (a.charCodeAt(i) ^ b.charCodeAt(i));
+  return r === 0;
+}
+function sha256_(s){
+  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(s));
+  return bytes.map(b => ('0'+(b<0?b+256:b).toString(16)).slice(-2)).join('');
+}
+
+// ----- Rate limit / lockout -----
+function adminFails_(fp){
+  const sh = sheet_(SH.admin_fails);
+  if (!sh) return 0;
+  const cutoff = now_() - ADMIN_LOCK_MIN*60*1000;
+  const r = sh.getDataRange().getValues(); const h = r.shift();
+  return r.filter(x => x[h.indexOf('fingerprint')] === fp && x[h.indexOf('ts')] > cutoff).length;
+}
+function recordFail_(fp, reason){
+  let sh = sheet_(SH.admin_fails);
+  if (!sh) sh = ss_().insertSheet(SH.admin_fails).appendRow(['ts','fingerprint','reason']) && sheet_(SH.admin_fails);
+  sh.appendRow([now_(), fp||'', reason||'']);
+}
+function adminLog_(action, target, fp, ok, detail){
+  let sh = sheet_(SH.admin_log);
+  if (!sh) sh = ss_().insertSheet(SH.admin_log).appendRow(['ts','action','target','fingerprint','ok','detail']) && sheet_(SH.admin_log);
+  sh.appendRow([now_(), action||'', target||'', fp||'', !!ok, String(detail||'').slice(0,500)]);
+}
+
+// ----- Admin session -----
+function adminSessionUser_(token, fp){
+  if (!token) return null;
+  const sh = sheet_(SH.admin_sessions);
+  if (!sh) return null;
+  const r = sh.getDataRange().getValues(); const h = r.shift();
+  const i = r.findIndex(x => x[h.indexOf('token')] === token);
+  if (i<0) return null;
+  if (r[i][h.indexOf('expires_at')] < now_()) { sh.deleteRow(i+2); return null; }
+  // ผูก fingerprint — เปลี่ยน UA/device = ใช้ token ไม่ได้
+  if (fp && r[i][h.indexOf('fingerprint')] !== fp) return null;
+  // update last_seen + sliding expiration
+  sh.getRange(i+2, h.indexOf('last_seen')+1).setValue(now_());
+  sh.getRange(i+2, h.indexOf('expires_at')+1).setValue(now_() + ADMIN_TTL_MIN*60*1000);
+  return {token};
+}
+function requireAdmin_(b){
+  const fp = String(b.fp||'');
+  return adminSessionUser_(b.admin_token, fp);
+}
+
+// ----- Admin login flow -----
+// step 1: ส่ง key + fp → ถ้าผ่าน → ส่ง OTP ไป ADMIN_EMAIL → return {need_otp:true}
+// step 2: ส่ง key + fp + otp → ออก admin_token
+function adminLogin_(b){
+  const fp = String(b.fp||'').slice(0,128);
+  if (!fp) return {error:'no fingerprint'};
+  if (adminFails_(fp) >= ADMIN_MAX_FAILS){
+    adminLog_('login_blocked', '', fp, false, 'too many fails');
+    return {error: 'locked: ลองอีกครั้งภายหลัง'};
+  }
+  if (!safeEq_(trimKey_(b.key), trimKey_(ADMIN_KEY))){
+    recordFail_(fp, 'wrong_key');
+    adminLog_('login_fail', '', fp, false, 'wrong key');
+    return {error:'unauthorized'};
+  }
+  if (!ADMIN_2FA){
+    return adminIssueToken_(fp);
+  }
+  // ส่ง OTP
+  const otp = String(Math.floor(100000 + Math.random()*900000));
+  PropertiesService.getScriptProperties().setProperty('admin_otp_'+fp,
+    JSON.stringify({otp, exp: now_()+10*60*1000}));
+  try {
+    MailApp.sendEmail({
+      to: ADMIN_EMAIL,
+      subject: '[ygiaphan ADMIN] OTP: ' + otp,
+      htmlBody: '<p>OTP เข้าสู่ระบบ admin (อายุ 10 นาที):</p>' +
+        '<div style="background:#fde2e0;color:#a03020;font-size:32px;font-weight:700;letter-spacing:8px;padding:20px;text-align:center;border-radius:8px">' + otp + '</div>' +
+        '<p style="color:#888;font-size:12px">ถ้าไม่ใช่คุณ — เปลี่ยน ADMIN_KEY ทันที</p>'
+    });
+  } catch(e){ return {error:'mail failed: '+e}; }
+  adminLog_('login_step1', '', fp, true, 'OTP sent');
+  return {ok:true, need_otp:true};
+}
+function adminLoginOtp_(b){
+  const fp = String(b.fp||'');
+  if (adminFails_(fp) >= ADMIN_MAX_FAILS) return {error:'locked'};
+  const raw = PropertiesService.getScriptProperties().getProperty('admin_otp_'+fp);
+  if (!raw) return {error:'no otp'};
+  const data = JSON.parse(raw);
+  if (data.exp < now_()) return {error:'otp expired'};
+  if (!safeEq_(String(b.otp||''), data.otp)){
+    recordFail_(fp, 'wrong_otp');
+    adminLog_('otp_fail', '', fp, false, '');
+    return {error:'wrong otp'};
+  }
+  PropertiesService.getScriptProperties().deleteProperty('admin_otp_'+fp);
+  return adminIssueToken_(fp);
+}
+function adminIssueToken_(fp){
+  const token = rid_('a_') + rid_('') + rid_('');
+  const sh = sheet_(SH.admin_sessions);
+  sh.appendRow([token, fp, now_(), now_() + ADMIN_TTL_MIN*60*1000, now_()]);
+  adminLog_('login_ok', '', fp, true, '');
+  return {ok:true, admin_token: token, expires_in: ADMIN_TTL_MIN*60};
+}
+function adminLogoutCall_(b){
+  const sh = sheet_(SH.admin_sessions);
+  if (sh){
+    const r = sh.getDataRange().getValues(); const h = r.shift();
+    const i = r.findIndex(x => x[h.indexOf('token')] === b.admin_token);
+    if (i>=0) sh.deleteRow(i+2);
+  }
+  adminLog_('logout', '', b.fp, true, '');
+  return {ok:true};
+}
+
+// ตรวจสอบ + log สำหรับ admin actions
+function guardAdmin_(b, action, target){
+  const sess = requireAdmin_(b);
+  if (!sess){
+    recordFail_(b.fp, 'no_session');
+    adminLog_(action, target, b.fp, false, 'unauthorized');
+    return null;
+  }
+  adminLog_(action, target, b.fp, true, '');
+  return sess;
+}
+function isAdmin_(k){ return safeEq_(trimKey_(k), trimKey_(ADMIN_KEY)); }
 function json_(o){
   return ContentService.createTextOutput(JSON.stringify(o))
     .setMimeType(ContentService.MimeType.JSON);
@@ -136,7 +280,7 @@ function listPosts_(token){
     .sort((a,b)=> String(b.date).localeCompare(String(a.date)));
 }
 function adminUpsertPost_(b){
-  if (!isAdmin_(b.key)) return {error:'unauthorized'};
+  if (!guardAdmin_(b, 'upsert_post', b.slug)) return {error:'unauthorized'};
   const sh = sheet_(SH.posts);
   const {idx, head} = findRow_(sh, 'slug', b.slug);
   const row = head.map(h => h==='categories'
@@ -147,7 +291,7 @@ function adminUpsertPost_(b){
   return {ok:true, slug:b.slug};
 }
 function adminDeletePost_(b){
-  if (!isAdmin_(b.key)) return {error:'unauthorized'};
+  if (!guardAdmin_(b, 'delete_post', b.slug)) return {error:'unauthorized'};
   const sh = sheet_(SH.posts);
   const {idx} = findRow_(sh, 'slug', b.slug);
   if (idx<0) return {error:'not found'};
@@ -173,7 +317,7 @@ function addComment_(b){
   return {ok:true};
 }
 function adminDelComment_(b){
-  if (!isAdmin_(b.key)) return {error:'unauthorized'};
+  if (!guardAdmin_(b, 'delete_comment', b.ts)) return {error:'unauthorized'};
   const sh = sheet_(SH.comments);
   const r = sh.getDataRange().getValues(); const h = r.shift();
   const idx = r.findIndex(x => String(x[h.indexOf('ts')]) === String(b.ts) && x[h.indexOf('slug')] === b.slug);
@@ -181,7 +325,7 @@ function adminDelComment_(b){
   sh.deleteRow(idx+2); return {ok:true};
 }
 function adminApprove_(b){
-  if (!isAdmin_(b.key)) return {error:'unauthorized'};
+  if (!guardAdmin_(b, 'approve_comment', b.ts)) return {error:'unauthorized'};
   const sh = sheet_(SH.comments);
   const r = sh.getDataRange().getValues(); const h = r.shift();
   const i = r.findIndex(x => String(x[h.indexOf('ts')]) === String(b.ts));
@@ -393,7 +537,7 @@ function orderSubmitSlip_(b){
   return {ok:true};
 }
 function adminOrderStatus_(b){
-  if (!isAdmin_(b.key)) return {error:'unauthorized'};
+  if (!guardAdmin_(b, 'order_status', b.order_id)) return {error:'unauthorized'};
   const sh = sheet_(SH.orders);
   const {idx, head} = findRow_(sh, 'order_id', b.order_id);
   if (idx<0) return {error:'not found'};
@@ -411,7 +555,7 @@ function donateLog_(b){
 
 /* ===== Admin: list all (posts/comments/orders/users) ===== */
 function adminListAll_(b){
-  if (!isAdmin_(b.key)) return {error:'unauthorized'};
+  if (!guardAdmin_(b, 'list_all', '')) return {error:'unauthorized'};
   const users = rowsAsObjects_(sheet_(SH.users));
   const userMap = {};
   users.forEach(u => { if (u.user_id) userMap[u.user_id] = {email:u.email, name:u.name, avatar:u.avatar}; });
