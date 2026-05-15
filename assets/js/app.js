@@ -272,15 +272,28 @@ window.YP_setOG = function(opts){
       const r = await window.YP_AUTH.me();
       if (r && r.ok && r.user){
         const u = r.user;
+        // ตั้ง flag admin ตาม email (เพิ่มใน config ก็ได้)
+        const ADMIN_EMAILS = ['giayphan@gmail.com'];
+        if (ADMIN_EMAILS.includes((u.email||'').toLowerCase())){
+          localStorage.setItem('yp:isAdmin','1');
+          // เพิ่มปุ่ม admin retroactive
+          if (!document.getElementById('navAdmin')){
+            const navEl = document.querySelector('.nav');
+            if (navEl){
+              const aa = document.createElement('a');
+              aa.id = 'navAdmin'; aa.href = 'admin.html'; aa.className = 'nav__link nav__admin';
+              aa.title = 'Admin'; aa.textContent = '🛡 Admin';
+              navEl.insertBefore(aa, navEl.querySelector('.search-btn') || navEl.lastElementChild);
+            }
+          }
+        }
         const initials = ((u.name||u.email||'?').trim()[0]||'?').toUpperCase();
         const name = (u.name||u.email||'').split(/[\s@]/)[0];
         const av = u.avatar
           ? `<img class="nav__avatar" src="${u.avatar}" alt="" referrerpolicy="no-referrer">`
           : `<span class="nav__avatar nav__avatar--ph">${initials}</span>`;
-        navAuth.innerHTML = `${av}<span class="nav__avatar-name">${name}</span>`;
-        // เปลี่ยนเป็น dropdown menu
-        navAuth.removeAttribute('href');
-        navAuth.style.cursor = 'pointer';
+        navAuth.innerHTML = `${av}<span class="nav__avatar-name">${name}</span><button class="nav__caret" id="navCaret" title="เมนู" aria-label="เมนู">▾</button>`;
+        // navAuth ยังคง link ไป me.html ปกติ; caret เปิด dropdown
         const menu = document.createElement('div');
         menu.className = 'me-menu';
         menu.hidden = true;
@@ -294,9 +307,10 @@ window.YP_setOG = function(opts){
           <a href="javascript:void(0)" id="navLogout"><span>🚪</span> ออกจากระบบ</a>`;
         navAuth.parentElement.style.position='relative';
         navAuth.after(menu);
-        navAuth.onclick = e => { e.preventDefault(); menu.hidden = !menu.hidden; };
+        const caret = document.getElementById('navCaret');
+        caret.onclick = e => { e.preventDefault(); e.stopPropagation(); menu.hidden = !menu.hidden; };
         document.addEventListener('click', e => {
-          if (!menu.contains(e.target) && e.target !== navAuth && !navAuth.contains(e.target)) menu.hidden = true;
+          if (!menu.contains(e.target) && e.target !== caret) menu.hidden = true;
         });
         menu.querySelector('#navLogout').onclick = async () => {
           await window.YP_AUTH.logout();

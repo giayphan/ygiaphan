@@ -236,6 +236,8 @@ a:hover{color:var(--brand);text-decoration:none}
 .me-menu a:hover{background:var(--brand-bg);color:var(--brand)}
 .me-menu a span{font-size:1.1em;width:22px;text-align:center}
 .me-menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.nav__caret{background:none;border:0;color:var(--brand);cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;border-radius:6px}
+.nav__caret:hover{background:rgba(45,138,78,.15)}
 .comment{display:flex;gap:10px;align-items:flex-start}
 .comment__avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--brand-bg)}
 .comment__avatar--ph{display:flex;align-items:center;justify-content:center;color:var(--brand);font-weight:700;text-transform:uppercase}
