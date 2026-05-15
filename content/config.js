@@ -5,7 +5,7 @@ window.YP_CONFIG = {
   // ถ้า API_URL ว่าง → ใช้ posts จาก content/posts/*.js (โหมด static เดิม)
   USE_API: true,
   // Facebook Login (เว้นว่าง = ปิด FB login)
-  FB_APP_ID: "",
+  FB_APP_ID: "1625605325597983",
   // ช่องทาง donate
   DONATE: {
     promptpay: "0812345678",                  // เบอร์/เลขบัตร PromptPay
