@@ -156,22 +156,47 @@ $('#otpBack').onclick = () => { $('#otpForm').hidden = true; $('#emailForm').hid
 
 // 4) Facebook Login
 const cfg = window.YP_CONFIG||{};
+console.log('[FB] config FB_APP_ID =', cfg.FB_APP_ID);
 if (cfg.FB_APP_ID){
   $('#fbBtn').hidden = false; $('#fbDiv').hidden = false;
-  window.fbAsyncInit = () => FB.init({appId:cfg.FB_APP_ID, cookie:true, xfbml:false, version:'v19.0'});
+  let fbReady = false;
+  window.fbAsyncInit = () => {
+    FB.init({appId:cfg.FB_APP_ID, cookie:true, xfbml:false, version:'v19.0'});
+    fbReady = true;
+    console.log('[FB] SDK ready');
+  };
   (function(d,s,i){const fjs=d.getElementsByTagName(s)[0]; if(d.getElementById(i)) return;
-    const js=d.createElement(s); js.id=i; js.src='https://connect.facebook.net/en_US/sdk.js'; fjs.parentNode.insertBefore(js,fjs);
+    const js=d.createElement(s); js.id=i; js.async=true; js.defer=true; js.crossOrigin='anonymous';
+    js.src='https://connect.facebook.net/en_US/sdk.js';
+    js.onerror = () => { console.error('[FB] SDK load failed — ad-blocker?'); $('#msg').innerHTML='<div class="msg msg--err">โหลด Facebook SDK ไม่ได้ (ปิด ad-blocker?)</div>'; };
+    fjs.parentNode.insertBefore(js,fjs);
   })(document,'script','fb-sdk');
   $('#fbBtn').onclick = () => {
+    console.log('[FB] click, ready=', fbReady, 'FB=', typeof FB);
+    if (typeof FB === 'undefined'){
+      $('#msg').innerHTML='<div class="msg msg--err">FB SDK ยังโหลดไม่เสร็จ ลองใหม่อีกครั้ง</div>';
+      return;
+    }
     FB.login(async resp => {
+      console.log('[FB] login response:', resp);
       if (resp.authResponse){
         $('#fbBtn').innerHTML = '<span class="yp-spinner"></span> กำลังเข้าสู่ระบบ…';
-        const r = await window.YP_AUTH.fbLogin(resp.authResponse.accessToken);
-        if (r.ok){ window.YP_AUTH.setToken(r.session); location.reload(); }
-        else $('#msg').innerHTML = `<div class="msg msg--err">${r.error}</div>`;
+        try {
+          const r = await window.YP_AUTH.fbLogin(resp.authResponse.accessToken);
+          console.log('[FB] backend response:', r);
+          if (r.ok){ window.YP_AUTH.setToken(r.session); location.reload(); }
+          else $('#msg').innerHTML = `<div class="msg msg--err">${r.error||'backend error'}</div>`;
+        } catch(err){
+          console.error('[FB] backend error:', err);
+          $('#msg').innerHTML = `<div class="msg msg--err">backend: ${err.message}</div>`;
+        }
+      } else {
+        $('#msg').innerHTML = `<div class="msg msg--err">ยกเลิก หรือไม่อนุญาต (status: ${resp.status})</div>`;
       }
     }, {scope:'public_profile,email'});
   };
+} else {
+  console.warn('[FB] FB_APP_ID ว่าง — ปุ่ม FB login ถูกซ่อน');
 }
 
 // 5) Logout
