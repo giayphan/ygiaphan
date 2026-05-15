@@ -160,16 +160,23 @@ const cfg = window.YP_CONFIG||{};
 console.log('[FB] config FB_APP_ID =', cfg.FB_APP_ID);
 if (cfg.FB_APP_ID){
   $('#fbBtn').hidden = false; $('#fbDiv').hidden = false;
-  window.fbAsyncInit = function() {
+  let fbInited = false;
+  function initFB(){
+    if (fbInited || typeof FB === 'undefined') return;
     FB.init({appId:cfg.FB_APP_ID, cookie:true, xfbml:false, version:'v19.0'});
-    console.log('[FB] SDK ready, FB=', typeof FB);
-  };
+    fbInited = true;
+    console.log('[FB] init done');
+  }
+  window.fbAsyncInit = initFB;
+  // SDK อาจโหลดเสร็จก่อน script นี้รัน → init ทันทีถ้า FB พร้อม
+  if (typeof FB !== 'undefined') initFB();
   $('#fbBtn').onclick = () => {
-    console.log('[FB] click, FB=', typeof FB);
+    console.log('[FB] click, FB=', typeof FB, 'inited=', fbInited);
     if (typeof FB === 'undefined'){
       $('#msg').innerHTML='<div class="msg msg--err">FB SDK ยังโหลดไม่เสร็จ ลองใหม่อีกครั้ง</div>';
       return;
     }
+    initFB();
     FB.login(function(resp){ (async () => {
       console.log('[FB] login response:', resp);
       if (resp.authResponse){
