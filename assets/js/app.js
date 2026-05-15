@@ -314,7 +314,8 @@ window.YP_setOG = function(opts){
         });
         menu.querySelector('#navLogout').onclick = async () => {
           await window.YP_AUTH.logout();
-          location.reload();
+          localStorage.removeItem('yp:isAdmin');
+          location.href = 'index.html';
         };
       } else {
         navAuth.innerHTML = `<span class="nav__avatar nav__avatar--ph">👤</span>`;

@@ -96,9 +96,12 @@ if (params.get('session')){
   location.replace(back);
 }
 
-// ถ้า login อยู่แล้ว → ไป me.html ทันที
+// ถ้ามี token + verify ผ่าน → ไป me.html (กัน loop ตอน token เสีย)
 if (window.YP_AUTH.isLogin()){
-  location.replace('me.html');
+  window.YP_AUTH.me().then(r => {
+    if (r && r.ok) location.replace('me.html');
+    else window.YP_AUTH.setToken(''); // clear bad token, แสดง form
+  });
 }
 
 // 2) ถ้า login อยู่แล้ว → แสดงโปรไฟล์

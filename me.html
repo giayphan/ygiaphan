@@ -193,6 +193,7 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
 
   $('#logoutBtn').onclick = async () => {
     await window.YP_AUTH.logout();
+    localStorage.removeItem('yp:isAdmin');
     location.href = 'index.html';
   };
 })();
