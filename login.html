@@ -91,9 +91,14 @@ const params = new URLSearchParams(location.search);
 // 1) ถ้า redirect กลับมาพร้อม session (จาก magic link fallback) → เก็บ + redirect
 if (params.get('session')){
   window.YP_AUTH.setToken(params.get('session'));
-  const back = sessionStorage.getItem('yp:back') || 'index.html';
+  const back = sessionStorage.getItem('yp:back') || 'me.html';
   sessionStorage.removeItem('yp:back');
   location.replace(back);
+}
+
+// ถ้า login อยู่แล้ว → ไป me.html ทันที
+if (window.YP_AUTH.isLogin()){
+  location.replace('me.html');
 }
 
 // 2) ถ้า login อยู่แล้ว → แสดงโปรไฟล์
