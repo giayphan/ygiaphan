@@ -161,7 +161,7 @@ window.YP_setOG = function(opts){
         }).join('')}
         <button class="search-btn" title="Search" id="searchBtn">🔍</button>
         <button class="lang-switch" title="Change language">🌐 ${T.switch_lang||'TH'}</button>
-        <a class="nav__link nav__login" href="login.html" id="navAuth">👤</a>
+        <a class="nav__link nav__login" href="login.html" id="navAuth" title="${T.login||'เข้าสู่ระบบ'}"><span class="nav__avatar nav__avatar--ph">👤</span></a>
       </nav>
     </div>
   </header>`;
@@ -251,13 +251,21 @@ window.YP_setOG = function(opts){
     const navAuth = document.getElementById('navAuth');
     if (!navAuth || !window.YP_AUTH || !window.YP_AUTH.isLogin()) return;
     navAuth.href = 'me.html';
+    navAuth.title = 'โปรไฟล์';
     try {
       const r = await window.YP_AUTH.me();
       if (r && r.ok && r.user){
         const u = r.user;
-        const av = u.avatar || 'assets/img/favicon.svg';
+        const initials = ((u.name||u.email||'?').trim()[0]||'?').toUpperCase();
         const name = (u.name||u.email||'').split(/[\s@]/)[0];
-        navAuth.innerHTML = `<img class="nav__avatar" src="${av}" alt=""><span class="nav__avatar-name">${name}</span>`;
+        const av = u.avatar
+          ? `<img class="nav__avatar" src="${u.avatar}" alt="" referrerpolicy="no-referrer">`
+          : `<span class="nav__avatar nav__avatar--ph">${initials}</span>`;
+        navAuth.innerHTML = `${av}<span class="nav__avatar-name">${name}</span>`;
+      } else {
+        // session หาย → กลับเป็น guest
+        navAuth.innerHTML = `<span class="nav__avatar nav__avatar--ph">👤</span>`;
+        navAuth.href = 'login.html';
       }
     } catch(_){}
   })();

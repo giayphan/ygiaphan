@@ -202,12 +202,12 @@ async function renderComments(slug){
       form.className = 'comment__reply-form';
       // member ไม่ต้อง name + captcha; guest ต้องมีทั้งคู่
       form.innerHTML = `
-        ${isLogin ? '' : `<input name="name" placeholder="ชื่อ" required maxlength="50" style="width:100%;padding:6px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:inherit;color:inherit">`}
+        ${isLogin ? '' : `<input name="name" placeholder="ชื่อ" required maxlength="50">`}
         <textarea name="msg" required maxlength="2000" placeholder="ตอบกลับ..."></textarea>
         <input name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" aria-hidden="true">
-        ${isLogin ? '' : `<label class="captcha" style="display:flex;align-items:center;gap:6px;font-size:.85em;margin-top:6px"><span>Verify: <strong>${cap.q}</strong></span><input name="answer" required inputmode="numeric" pattern="-?[0-9]+" autocomplete="off" style="width:60px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:inherit;color:inherit"></label>`}
-        <div style="display:flex;gap:6px;margin-top:6px"><button type="submit" class="btn btn--primary btn--sm">ส่ง</button><button type="button" class="btn btn--ghost btn--sm" data-cancel>ยกเลิก</button></div>
-        <p class="form-error muted" hidden style="color:#a03020"></p>`;
+        ${isLogin ? '' : `<label class="captcha"><span>Verify: <strong>${cap.q}</strong></span><input name="answer" required inputmode="numeric" pattern="-?[0-9]+" autocomplete="off"></label>`}
+        <div><button type="button" class="btn btn--ghost" data-cancel>ยกเลิก</button><button type="submit" class="btn btn--primary">ส่ง</button></div>
+        <p class="form-error" hidden></p>`;
       main.querySelector('.comment__actions').after(form);
       form.querySelector('textarea').focus();
       form.querySelector('[data-cancel]').onclick = () => form.remove();
