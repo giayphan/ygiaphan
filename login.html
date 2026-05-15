@@ -170,7 +170,7 @@ if (cfg.FB_APP_ID){
       $('#msg').innerHTML='<div class="msg msg--err">FB SDK ยังโหลดไม่เสร็จ ลองใหม่อีกครั้ง</div>';
       return;
     }
-    FB.login(async resp => {
+    FB.login(function(resp){ (async () => {
       console.log('[FB] login response:', resp);
       if (resp.authResponse){
         $('#fbBtn').innerHTML = '<span class="yp-spinner"></span> กำลังเข้าสู่ระบบ…';
@@ -186,7 +186,7 @@ if (cfg.FB_APP_ID){
       } else {
         $('#msg').innerHTML = `<div class="msg msg--err">ยกเลิก หรือไม่อนุญาต (status: ${resp.status})</div>`;
       }
-    }, {scope:'public_profile,email'});
+    })(); }, {scope:'public_profile,email'});
   };
 } else {
   console.warn('[FB] FB_APP_ID ว่าง — ปุ่ม FB login ถูกซ่อน');
