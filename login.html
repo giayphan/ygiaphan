@@ -165,7 +165,7 @@ if (cfg.FB_APP_ID){
     console.log('[FB] SDK ready, FB=', typeof FB);
   };
   $('#fbBtn').onclick = () => {
-    console.log('[FB] click, ready=', fbReady, 'FB=', typeof FB);
+    console.log('[FB] click, FB=', typeof FB);
     if (typeof FB === 'undefined'){
       $('#msg').innerHTML='<div class="msg msg--err">FB SDK ยังโหลดไม่เสร็จ ลองใหม่อีกครั้ง</div>';
       return;
