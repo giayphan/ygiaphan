@@ -1,5 +1,5 @@
 // ygiaphan service worker — bump version to invalidate cache
-const VERSION = 'yp-v3';
+const VERSION = 'yp-v4';
 const STATIC = [
   './',
   './index.html',
