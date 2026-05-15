@@ -272,7 +272,8 @@ a:hover{color:var(--brand);text-decoration:none}
 html[data-theme="dark"] .search-box{background:#222a25}
 .search-box input{width:100%;padding:14px 44px 14px 16px;border:2px solid var(--line);border-radius:12px;font:inherit;font-size:1.05rem;background:inherit;color:inherit;box-sizing:border-box}
 .search-box input:focus{outline:none;border-color:var(--brand)}
-.search-close{position:absolute;top:24px;right:28px;background:none;border:0;font-size:18px;cursor:pointer;color:var(--muted)}
+.search-close{position:absolute;top:18px;right:18px;background:none;border:0;font-size:20px;cursor:pointer;color:var(--muted);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1;pointer-events:auto}
+.search-close:hover{background:var(--brand-bg);color:var(--brand)}
 .search-results{max-height:60vh;overflow-y:auto;margin-top:10px}
 .search-item{display:block;padding:12px 14px;border-radius:10px;text-decoration:none;color:var(--fg)}
 .search-item:hover{background:var(--brand-bg);text-decoration:none}

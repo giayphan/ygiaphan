@@ -210,11 +210,15 @@ window.YP_setOG = function(opts){
   const sm = document.getElementById('searchModal');
   const si = document.getElementById('searchInput');
   const sr = document.getElementById('searchResults');
-  function openSearch(){ sm.hidden = false; setTimeout(()=>si.focus(),50); }
-  function closeSearch(){ sm.hidden = true; si.value=''; sr.innerHTML=''; }
-  document.getElementById('searchBtn')?.addEventListener('click', openSearch);
-  document.getElementById('searchClose').onclick = closeSearch;
-  sm.addEventListener('click', e => { if (e.target === sm) closeSearch(); });
+  function openSearch(){ sm.hidden = false; document.body.style.overflow='hidden'; setTimeout(()=>si.focus(),50); }
+  function closeSearch(){ sm.hidden = true; document.body.style.overflow=''; si.value=''; sr.innerHTML=''; lastQ=''; }
+  window.YP_closeSearch = closeSearch;
+  // delegate clicks (header rebuild ทำให้ direct binding หาย)
+  document.addEventListener('click', e => {
+    if (e.target.closest('#searchBtn')) { e.preventDefault(); openSearch(); return; }
+    if (e.target.closest('#searchClose')) { e.preventDefault(); closeSearch(); return; }
+    if (e.target === sm) closeSearch(); // click backdrop
+  });
   document.addEventListener('keydown', e => {
     if ((e.ctrlKey||e.metaKey) && e.key === 'k'){ e.preventDefault(); openSearch(); }
     if (e.key === 'Escape' && !sm.hidden) closeSearch();
