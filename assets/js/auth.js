@@ -2,10 +2,24 @@
 (function(){
   const KEY = 'yp:session';
   const cfg = window.YP_CONFIG||{};
-  const post = (body) => fetch(cfg.API_URL, {
-    method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify(body)
-  }).then(r=>r.json());
+  // fingerprint per browser (sessionStorage = หาย เมื่อปิดบราวเซอร์ → กัน token theft cross-tab/device)
+  function getFp(){
+    let fp = sessionStorage.getItem('yp:fp');
+    if (!fp){
+      const seed = navigator.userAgent + '|' + navigator.language + '|' + screen.width;
+      let h = 0; for (let i=0;i<seed.length;i++) h = ((h<<5)-h+seed.charCodeAt(i))|0;
+      fp = 'fp_'+Math.abs(h).toString(36)+'_'+Math.random().toString(36).slice(2,10);
+      sessionStorage.setItem('yp:fp', fp);
+    }
+    return fp;
+  }
+  const post = (body) => {
+    body.fp = getFp();
+    return fetch(cfg.API_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(body)
+    }).then(r=>r.json());
+  };
 
   window.YP_AUTH = {
     token(){ return localStorage.getItem(KEY) || ''; },

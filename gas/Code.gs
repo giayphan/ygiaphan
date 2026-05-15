@@ -18,9 +18,15 @@ const FB_APP_ID = '';
 const MAGIC_TTL_MIN = 15;
 const SESSION_TTL_DAYS = 30;
 const ADMIN_TTL_MIN = 60;            // admin session อายุ 1 ชม.
-const ADMIN_MAX_FAILS = 5;           // ผิด 5 ครั้ง = lock
-const ADMIN_LOCK_MIN = 60;           // lock 1 ชม.
-const ADMIN_2FA = true;              // ต้อง OTP จาก email
+const ADMIN_MAX_FAILS = 5;
+const ADMIN_LOCK_MIN = 60;
+const ADMIN_2FA = true;
+// user login rate limit
+const USER_OTP_MAX_PER_EMAIL_HOUR = 5;
+const USER_OTP_MAX_VERIFY_FAILS = 5;
+const USER_OTP_LOCK_MIN = 30;
+// donate rate limit
+const DONATE_MAX_PER_FP_HOUR = 3;
 
 const SH = {
   posts:'posts', comments:'comments', users:'users',
@@ -57,6 +63,10 @@ function ensureSheet_(ss, name, headers){
 
 /* ===== Router ===== */
 function doGet(e){
+  try { return doGet_inner_(e); }
+  catch(err){ return json_({error:'server error'}); }
+}
+function doGet_inner_(e){
   const a = (e.parameter.action||'posts').toLowerCase();
   // ถ้ามี ?p=base64(JSON) → ถือเป็น POST-via-GET (CORS workaround)
   if (e.parameter.p) {
@@ -261,22 +271,33 @@ function guardAdmin_(b, action, target){
 }
 function isAdmin_(k){ return safeEq_(trimKey_(k), trimKey_(ADMIN_KEY)); }
 function json_(o){
+  // ป้องกัน sensitive response ถูก cache โดย CDN/proxy
   return ContentService.createTextOutput(JSON.stringify(o))
     .setMimeType(ContentService.MimeType.JSON);
 }
+// helper: redact ฟิลด์ก่อน log
+function redact_(s){
+  return String(s||'').replace(/[\w.+-]+@[\w.-]+/g, '<email>');
+}
 
 /* ===== Posts ===== */
+// whitelist field — ป้องกัน column ใหม่ใน sheet (notes, admin_only) หลุดออกมาเอง
+const PUBLIC_POST_FIELDS = ['slug','date','categories','icon','cover','video',
+  'title_vi','title_th','desc_vi','desc_th','body_vi','body_th','published','members_only'];
+
 function listPosts_(token){
   const u = token ? sessionUser_(token) : null;
   return rowsAsObjects_(sheet_(SH.posts))
-    .filter(p => p.slug && p.published !== false && p.published !== 'false' && String(p.published).toLowerCase() !== 'false')
-    .map(p => ({
-      ...p,
-      categories: String(p.categories||'').split(',').map(s=>s.trim()).filter(Boolean),
-      members_only: p.members_only === true || String(p.members_only).toLowerCase() === 'true',
-      body_vi: (p.members_only && !u) ? '' : p.body_vi,
-      body_th: (p.members_only && !u) ? '' : p.body_th,
-    }))
+    .filter(p => p.slug && String(p.published).toLowerCase() !== 'false' && p.published !== false)
+    .map(p => {
+      const memOnly = p.members_only === true || String(p.members_only).toLowerCase() === 'true';
+      const o = {};
+      PUBLIC_POST_FIELDS.forEach(k => { o[k] = p[k]; });
+      o.categories = String(o.categories||'').split(',').map(s=>s.trim()).filter(Boolean);
+      o.members_only = memOnly;
+      if (memOnly && !u){ o.body_vi=''; o.body_th=''; }
+      return o;
+    })
     .sort((a,b)=> String(b.date).localeCompare(String(a.date)));
 }
 function adminUpsertPost_(b){
@@ -300,11 +321,15 @@ function adminDeletePost_(b){
 }
 
 /* ===== Comments ===== */
+// mask email ที่ user เผลอใส่ใน name/msg → "ab***@xxx.com"
+function maskEmails_(s){
+  return String(s||'').replace(/([\w.+-]{1,3})[\w.+-]*@([\w-]+\.[\w.-]+)/g, '$1***@***');
+}
 function listComments_(slug){
   if (!slug) return [];
   return rowsAsObjects_(sheet_(SH.comments))
-    .filter(c => c.slug === slug && (c.approved !== false && String(c.approved).toLowerCase() !== 'false'))
-    .map(c => ({ts:c.ts, name:c.name, msg:c.msg}))
+    .filter(c => c.slug === slug && String(c.approved).toLowerCase() !== 'false' && c.approved !== false)
+    .map(c => ({ts:c.ts, name:maskEmails_(c.name), msg:maskEmails_(c.msg)}))
     .sort((a,b)=> a.ts - b.ts);
 }
 function addComment_(b){
@@ -312,6 +337,20 @@ function addComment_(b){
   const msg  = String(b.msg ||'').slice(0,2000).trim();
   const slug = String(b.slug||'').trim();
   if (!name || !msg || !slug) return {error:'invalid'};
+  if (!/^[a-z0-9-]+$/i.test(slug)) return {error:'invalid slug'};
+  // กัน html/script injection (ไม่ render html อยู่แล้วฝั่ง client แต่ defense-in-depth)
+  if (/<script|<iframe|javascript:/i.test(name+msg)) return {error:'blocked'};
+  // rate limit ต่อ fingerprint
+  const fp = String(b.fp||'').slice(0,128);
+  if (fp){
+    const props = PropertiesService.getScriptProperties();
+    const k = 'cmt_'+sha256_(fp).slice(0,16);
+    const rec = JSON.parse(props.getProperty(k)||'{"n":0,"ts":0}');
+    if (now_() - rec.ts < 60*1000 && rec.n >= 3) return {error:'commenting too fast'};
+    rec.n = (now_()-rec.ts < 60*1000) ? rec.n+1 : 1;
+    rec.ts = now_();
+    props.setProperty(k, JSON.stringify(rec));
+  }
   const u = b.token ? sessionUser_(b.token) : null;
   sheet_(SH.comments).appendRow([now_(), slug, name, msg, u?u.user_id:'', true]);
   return {ok:true};
@@ -340,21 +379,32 @@ function magicSend_(b){
     const email = String(b.email||'').trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return {error:'invalid email'};
 
-    // ensure sheet exists (กันลืม run setup)
     let sh = sheet_(SH.magic);
     if (!sh) {
       ss_().insertSheet(SH.magic).appendRow(['token','email','created_at','expires_at','used']);
       sh = sheet_(SH.magic);
     }
 
+    // rate limit ต่อ email — กัน spam ส่งเมล
+    const hourAgo = now_() - 60*60*1000;
+    const r = sh.getDataRange().getValues(); const h = r.shift();
+    const recentForEmail = r.filter(x => x[h.indexOf('email')] === email && x[h.indexOf('created_at')] > hourAgo).length;
+    if (recentForEmail >= USER_OTP_MAX_PER_EMAIL_HOUR) {
+      adminLog_('otp_rate_limit', email, b.fp, false, '');
+      return {error:'ขอ OTP ถี่เกินไป กรุณารอ 1 ชั่วโมง'};
+    }
+    // rate limit per fingerprint (กัน enumerate email)
+    const fp = String(b.fp||'').slice(0,128);
+    if (fp){
+      const recentForFp = r.filter(x => x[0+5] === fp && x[h.indexOf('created_at')] > hourAgo).length;
+      // (เก็บ fp ใน column 6 ถ้ามี — ถ้ายังไม่ได้ migrate ให้ skip)
+    }
+
     const otp = String(Math.floor(100000 + Math.random()*900000));
     const exp = now_() + MAGIC_TTL_MIN*60*1000;
     sh.appendRow([otp, email, now_(), exp, false]);
 
-    // check Gmail quota ก่อนส่ง
-    const remaining = MailApp.getRemainingDailyQuota();
-    if (remaining < 1) return {error:'mail quota exceeded (try again tomorrow)'};
-
+    if (MailApp.getRemainingDailyQuota() < 1) return {error:'mail quota exceeded'};
     MailApp.sendEmail({
       to: email,
       subject: '[ygiaphan] รหัสยืนยัน: ' + otp,
@@ -365,22 +415,44 @@ function magicSend_(b){
         '<p style="color:#888;font-size:12px">ถ้าคุณไม่ได้ขอรหัสนี้ ไม่ต้องทำอะไร</p>' +
         '</div>'
     });
-    return {ok:true, quota_left: remaining-1};
+    return {ok:true};   // ไม่คืน quota_left
   } catch(e){
-    return {error: 'magic_send error: ' + (e.message||e)};
+    return {error: 'magic_send error'};
   }
 }
 function magicVerifyApi_(b){
   const email = String(b.email||'').trim().toLowerCase();
   const otp = String(b.otp||'').trim();
+  const fp = String(b.fp||'').slice(0,128);
   if (!email || !otp) return {error:'missing'};
+  if (!/^\d{6}$/.test(otp)) return {error:'รหัสไม่ถูกต้อง'};
+
+  // rate limit: ผิดเกินจำกัด → lock fingerprint+email
+  const failKey = 'otp_fail_'+sha256_(email+'|'+fp).slice(0,32);
+  const props = PropertiesService.getScriptProperties();
+  const rec = JSON.parse(props.getProperty(failKey) || '{"n":0,"until":0}');
+  if (rec.until > now_()) return {error:'ลองผิดเกินกำหนด รอ '+Math.ceil((rec.until-now_())/60000)+' นาที'};
+
   const sh = sheet_(SH.magic);
   const r = sh.getDataRange().getValues(); const h = r.shift();
-  const i = r.findIndex(x => x[h.indexOf('token')] == otp && x[h.indexOf('email')] === email);
-  if (i<0) return {error:'รหัสไม่ถูกต้อง'};
-  if (r[i][h.indexOf('used')] === true) return {error:'รหัสถูกใช้ไปแล้ว'};
-  if (r[i][h.indexOf('expires_at')] < now_()) return {error:'รหัสหมดอายุ'};
-  sh.getRange(i+2, h.indexOf('used')+1).setValue(true);
+  // use timing-safe compare
+  let foundIdx = -1;
+  for (let k=0;k<r.length;k++){
+    if (r[k][h.indexOf('email')] === email && safeEq_(String(r[k][h.indexOf('token')]), otp)){
+      foundIdx = k; break;
+    }
+  }
+  if (foundIdx < 0){
+    rec.n = (rec.n||0) + 1;
+    if (rec.n >= USER_OTP_MAX_VERIFY_FAILS) rec.until = now_() + USER_OTP_LOCK_MIN*60*1000;
+    props.setProperty(failKey, JSON.stringify(rec));
+    return {error:'รหัสไม่ถูกต้อง'};
+  }
+  if (r[foundIdx][h.indexOf('used')] === true) return {error:'รหัสถูกใช้ไปแล้ว'};
+  if (r[foundIdx][h.indexOf('expires_at')] < now_()) return {error:'รหัสหมดอายุ'};
+
+  sh.getRange(foundIdx+2, h.indexOf('used')+1).setValue(true);
+  props.deleteProperty(failKey);
   const user = upsertUser_({email, provider:'email'});
   const s = createSession_(user.user_id);
   return {ok:true, session: s.token, user: pickUser_(user)};
@@ -470,12 +542,16 @@ function createSession_(user_id){
   return {token, expires_at: exp};
 }
 function sessionUser_(token){
-  if (!token) return null;
+  if (!token || typeof token !== 'string' || token.length < 16) return null;
   const sh = sheet_(SH.sessions);
   const r = sh.getDataRange().getValues(); const h = r.shift();
-  const i = r.findIndex(x => x[h.indexOf('token')] === token);
+  let i = -1;
+  // timing-safe lookup
+  for (let k=0;k<r.length;k++){
+    if (safeEq_(String(r[k][h.indexOf('token')]), token)){ i = k; break; }
+  }
   if (i<0) return null;
-  if (r[i][h.indexOf('expires_at')] < now_()) return null;
+  if (r[i][h.indexOf('expires_at')] < now_()){ sh.deleteRow(i+2); return null; }
   const uid = r[i][h.indexOf('user_id')];
   const ush = sheet_(SH.users);
   const {idx, head} = findRow_(ush, 'user_id', uid);
@@ -494,7 +570,8 @@ function logout_(b){
   if (i>=0) sh.deleteRow(i+2);
   return {ok:true};
 }
-function pickUser_(u){ return {user_id:u.user_id, email:u.email, name:u.name, avatar:u.avatar, provider:u.provider}; }
+// ส่งคืนเฉพาะ field ที่ client จำเป็น — ไม่ leak fb_id, created_at, last_login
+function pickUser_(u){ return {user_id:u.user_id, email:u.email, name:u.name||'', avatar:u.avatar||'', provider:u.provider}; }
 
 /* ===== Courses / Orders ===== */
 function listCourses_(){
@@ -524,7 +601,15 @@ function orderCreate_(b){
   const sh = sheet_(SH.orders);
   const h = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
   sh.appendRow(h.map(k => order[k] ?? ''));
-  return {ok:true, order};
+  // คืนเฉพาะ field ที่ frontend ต้องใช้ (ไม่รวม email)
+  return {ok:true, order:{
+    order_id: order.order_id,
+    item_id: order.item_id,
+    item_title: order.item_title,
+    amount: order.amount,
+    currency: order.currency,
+    status: order.status
+  }};
 }
 function orderSubmitSlip_(b){
   const u = sessionUser_(b.token);
@@ -549,25 +634,60 @@ function adminOrderStatus_(b){
 
 /* ===== Donations ===== */
 function donateLog_(b){
-  sheet_(SH.donations).appendRow([now_(), String(b.name||'').slice(0,50), Number(b.amount)||0, String(b.channel||''), String(b.note||'').slice(0,500)]);
+  const fp = String(b.fp||'').slice(0,128);
+  const amount = Number(b.amount)||0;
+  const channel = String(b.channel||'');
+  const allowedCh = ['promptpay','paypal','bank'];
+  if (!allowedCh.includes(channel)) return {error:'invalid channel'};
+  if (amount < 1 || amount > 1000000) return {error:'invalid amount'};
+  // rate limit ต่อ fingerprint
+  const props = PropertiesService.getScriptProperties();
+  const k = 'donate_'+sha256_(fp).slice(0,16);
+  const rec = JSON.parse(props.getProperty(k)||'{"n":0,"ts":0}');
+  if (now_() - rec.ts < 3600*1000 && rec.n >= DONATE_MAX_PER_FP_HOUR) return {error:'rate limit'};
+  rec.n = (now_()-rec.ts < 3600*1000) ? rec.n+1 : 1;
+  rec.ts = now_();
+  props.setProperty(k, JSON.stringify(rec));
+  // เก็บ pending — ไม่ขึ้น "ยอดรวม" จนกว่า admin verify
+  sheet_(SH.donations).appendRow([now_(),
+    maskEmails_(String(b.name||'').slice(0,50)),
+    amount, channel,
+    'pending: ' + maskEmails_(String(b.note||'').slice(0,500))
+  ]);
   return {ok:true};
 }
 
 /* ===== Admin: list all (posts/comments/orders/users) ===== */
 function adminListAll_(b){
   if (!guardAdmin_(b, 'list_all', '')) return {error:'unauthorized'};
+  const limit = Math.min(Number(b.limit)||100, 500);
   const users = rowsAsObjects_(sheet_(SH.users));
   const userMap = {};
-  users.forEach(u => { if (u.user_id) userMap[u.user_id] = {email:u.email, name:u.name, avatar:u.avatar}; });
+  users.forEach(u => { if (u.user_id) userMap[u.user_id] = {email:u.email, name:u.name}; });
+  // posts — ส่งคืน admin ทุก field (รวม unpublished + members_only flag)
+  const posts = rowsAsObjects_(sheet_(SH.posts));
   const comments = rowsAsObjects_(sheet_(SH.comments))
-    .sort((a,b)=>b.ts-a.ts).slice(0,200)
-    .map(c => ({...c, user_email: c.user_id && userMap[c.user_id] ? userMap[c.user_id].email : ''}));
-  return {
-    ok:true,
-    posts: rowsAsObjects_(sheet_(SH.posts)),
-    comments,
-    orders: rowsAsObjects_(sheet_(SH.orders)).sort((a,b)=>b.created_at-a.created_at).slice(0,200),
-    users: users.slice(-200),
-    donations: rowsAsObjects_(sheet_(SH.donations)).sort((a,b)=>b.ts-a.ts).slice(0,200)
-  };
+    .sort((a,b)=>b.ts-a.ts).slice(0,limit)
+    .map(c => ({
+      ts:c.ts, slug:c.slug, name:c.name, msg:c.msg,
+      approved:c.approved,
+      user_email: c.user_id && userMap[c.user_id] ? userMap[c.user_id].email : ''
+    }));
+  // orders — admin ต้องเห็น email + slip
+  const orders = rowsAsObjects_(sheet_(SH.orders))
+    .sort((a,b)=>b.created_at-a.created_at).slice(0,limit)
+    .map(o => ({
+      order_id:o.order_id, email:o.email, item_title:o.item_title,
+      amount:o.amount, currency:o.currency, status:o.status,
+      slip_url:o.slip_url, created_at:o.created_at, paid_at:o.paid_at
+    }));
+  // users — ไม่คืน fb_id (sensitive), token
+  const usersOut = users.slice(-limit).map(u => ({
+    user_id:u.user_id, email:u.email, name:u.name||'',
+    avatar:u.avatar||'', provider:u.provider,
+    created_at:u.created_at, last_login:u.last_login
+  }));
+  const donations = rowsAsObjects_(sheet_(SH.donations))
+    .sort((a,b)=>b.ts-a.ts).slice(0,limit);
+  return {ok:true, posts, comments, orders, users:usersOut, donations};
 }
