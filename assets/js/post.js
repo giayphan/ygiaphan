@@ -174,7 +174,7 @@ async function renderComments(slug){
   if (!list.length){ el.innerHTML = `<p class="muted">${T.comment_empty||'No comments yet'}</p>`; return; }
   // build tree
   const byParent = {0:[]};
-  list.forEach(c => { (byParent[c.parent_ts||0] ||= []).push(c); });
+  list.forEach(c => { const k = c.parent_ts||0; if (!byParent[k]) byParent[k]=[]; byParent[k].push(c); });
   function renderOne(c){
     const av = c.avatar ? `<img class="comment__avatar" src="${escapeHtml(c.avatar)}" alt="">` : `<span class="comment__avatar comment__avatar--ph">${escapeHtml((c.name||'?')[0])}</span>`;
     const badge = c.is_member ? `<span class="comment__badge" title="สมาชิก">✓</span>` : '';

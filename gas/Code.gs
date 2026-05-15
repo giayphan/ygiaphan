@@ -631,7 +631,7 @@ function leaderboard_(b){
   rowsAsObjects_(sheet_(SH.quiz_log))
     .filter(x => Number(x.ts)||0 >= cutoff)
     .forEach(x => {
-      tally[x.user_id] ||= {pts:0, n:0};
+      if (!tally[x.user_id]) tally[x.user_id] = {pts:0, n:0};
       tally[x.user_id].pts += Number(x.score)||0;
       tally[x.user_id].n += 1;
     });
