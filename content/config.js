@@ -4,8 +4,8 @@ window.YP_CONFIG = {
   API_URL: "https://script.google.com/macros/s/AKfycbxz-2eilxmG2I7v-Yjqhx9-Dp8ZtmKoWh6mOnK-7I8ZIef8wZAyNv3aVv0jZ3SquUYB/exec",
   // ถ้า API_URL ว่าง → ใช้ posts จาก content/posts/*.js (โหมด static เดิม)
   USE_API: true,
-  // Facebook Login (เว้นว่าง = ปิด FB login)
-  FB_APP_ID: "1625605325597983",
+  // Google Sign-In (เว้นว่าง = ปิด)
+  GOOGLE_CLIENT_ID: "988617561301-ei26l4a5o1sguse1vkkfs5ankfrrcshk.apps.googleusercontent.com",
   // ช่องทาง donate
   DONATE: {
     promptpay: "0812345678",                  // เบอร์/เลขบัตร PromptPay

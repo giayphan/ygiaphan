@@ -33,6 +33,7 @@
     magicSend(email){ return post({action:'magic_send', email}); },
     magicVerify(email, otp){ return post({action:'magic_verify', email, otp}); },
     fbLogin(access_token){ return post({action:'fb_login', access_token}); },
+    googleLogin(id_token){ return post({action:'google_login', id_token}); },
     async logout(){
       const t = this.token(); this.setToken('');
       if (t) try { await post({action:'logout', token:t}); } catch(_){}

@@ -8,7 +8,7 @@
 <meta name="referrer" content="no-referrer-when-downgrade">
 <link rel="icon" href="assets/img/favicon.svg">
 <link rel="stylesheet" href="assets/css/main.css">
-<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   .login-wrap{max-width:420px;margin:60px auto;padding:0 16px}
   .login-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px;
@@ -27,6 +27,7 @@
   .login-card .divider{text-align:center;color:var(--muted);font-size:.85rem;margin:16px 0;position:relative}
   .login-card .divider::before,.login-card .divider::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:var(--line)}
   .login-card .divider::before{left:0} .login-card .divider::after{right:0}
+  .login-card .divider{margin:18px 0}
   .login-card .msg{padding:10px;border-radius:8px;margin-top:12px;font-size:.9rem}
   .login-card .msg--ok{background:#d4edda;color:#155724}
   .login-card .msg--err{background:#fde2e0;color:#a03020}
@@ -57,11 +58,10 @@
       <button class="btn" type="button" id="otpBack" style="background:#888;margin-top:6px">← เปลี่ยน email</button>
     </form>
 
-    <div class="divider" id="fbDiv" hidden>หรือ</div>
-    <button class="btn btn--fb" id="fbBtn" hidden>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-      เข้าสู่ระบบด้วย Facebook
-    </button>
+    <div id="gDiv" hidden>
+      <div class="divider">หรือ</div>
+      <div id="gBtn" style="display:flex;justify-content:center"></div>
+    </div>
 
     <div id="msg"></div>
   </div>
@@ -155,48 +155,28 @@ $('#otpForm').addEventListener('submit', async e => {
 });
 $('#otpBack').onclick = () => { $('#otpForm').hidden = true; $('#emailForm').hidden = false; $('#msg').innerHTML=''; };
 
-// 4) Facebook Login
+// 4) Google Sign-In
 const cfg = window.YP_CONFIG||{};
-console.log('[FB] config FB_APP_ID =', cfg.FB_APP_ID);
-if (cfg.FB_APP_ID){
-  $('#fbBtn').hidden = false; $('#fbDiv').hidden = false;
-  let fbInited = false;
-  function initFB(){
-    if (fbInited || typeof FB === 'undefined') return;
-    FB.init({appId:cfg.FB_APP_ID, cookie:true, xfbml:false, version:'v19.0'});
-    fbInited = true;
-    console.log('[FB] init done');
-  }
-  window.fbAsyncInit = initFB;
-  // SDK อาจโหลดเสร็จก่อน script นี้รัน → init ทันทีถ้า FB พร้อม
-  if (typeof FB !== 'undefined') initFB();
-  $('#fbBtn').onclick = () => {
-    console.log('[FB] click, FB=', typeof FB, 'inited=', fbInited);
-    if (typeof FB === 'undefined'){
-      $('#msg').innerHTML='<div class="msg msg--err">FB SDK ยังโหลดไม่เสร็จ ลองใหม่อีกครั้ง</div>';
-      return;
-    }
-    initFB();
-    FB.login(function(resp){ (async () => {
-      console.log('[FB] login response:', resp);
-      if (resp.authResponse){
-        $('#fbBtn').innerHTML = '<span class="yp-spinner"></span> กำลังเข้าสู่ระบบ…';
+if (cfg.GOOGLE_CLIENT_ID){
+  $('#gDiv').hidden = false;
+  function initGoogle(){
+    if (typeof google === 'undefined' || !google.accounts) { setTimeout(initGoogle, 200); return; }
+    google.accounts.id.initialize({
+      client_id: cfg.GOOGLE_CLIENT_ID,
+      callback: async (resp) => {
+        $('#msg').innerHTML = '<div class="msg msg--ok"><span class="yp-spinner"></span> กำลังเข้าสู่ระบบ…</div>';
         try {
-          const r = await window.YP_AUTH.fbLogin(resp.authResponse.accessToken);
-          console.log('[FB] backend response:', r);
+          const r = await window.YP_AUTH.googleLogin(resp.credential);
           if (r.ok){ window.YP_AUTH.setToken(r.session); location.reload(); }
-          else $('#msg').innerHTML = `<div class="msg msg--err">${r.error||'backend error'}</div>`;
+          else $('#msg').innerHTML = `<div class="msg msg--err">${r.error||'error'}</div>`;
         } catch(err){
-          console.error('[FB] backend error:', err);
-          $('#msg').innerHTML = `<div class="msg msg--err">backend: ${err.message}</div>`;
+          $('#msg').innerHTML = `<div class="msg msg--err">${err.message}</div>`;
         }
-      } else {
-        $('#msg').innerHTML = `<div class="msg msg--err">ยกเลิก หรือไม่อนุญาต (status: ${resp.status})</div>`;
       }
-    })(); }, {scope:'public_profile,email'});
-  };
-} else {
-  console.warn('[FB] FB_APP_ID ว่าง — ปุ่ม FB login ถูกซ่อน');
+    });
+    google.accounts.id.renderButton($('#gBtn'), {theme:'outline', size:'large', width:320, text:'continue_with'});
+  }
+  initGoogle();
 }
 
 // 5) Logout

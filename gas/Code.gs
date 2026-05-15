@@ -106,6 +106,7 @@ function doPostBody_(b){
     if (a === 'magic_send')    return json_(magicSend_(b));
     if (a === 'magic_verify')  return json_(magicVerifyApi_(b));
     if (a === 'fb_login')      return json_(fbLogin_(b));
+    if (a === 'google_login')  return json_(googleLogin_(b));
     if (a === 'logout')        return json_(logout_(b));
     if (a === 'order_create')  return json_(orderCreate_(b));
     if (a === 'order_slip')    return json_(orderSubmitSlip_(b));
@@ -510,6 +511,27 @@ function fbLogin_(b){
     const s = createSession_(user.user_id);
     return {ok:true, session: s.token, user: pickUser_(user)};
   } catch(e){ return {error:'fb error: '+e}; }
+}
+
+/* ===== Google Sign-In ===== */
+function googleLogin_(b){
+  const idToken = String(b.id_token||'');
+  if (!idToken) return {error:'no token'};
+  try {
+    const res = UrlFetchApp.fetch('https://oauth2.googleapis.com/tokeninfo?id_token='+encodeURIComponent(idToken));
+    const g = JSON.parse(res.getContentText());
+    if (!g.sub || !g.email) return {error:'google verify failed'};
+    // (optional) verify aud === GOOGLE_CLIENT_ID
+    const user = upsertUser_({
+      email: g.email,
+      name: g.name||'',
+      provider: 'google',
+      google_id: g.sub,
+      avatar: g.picture||''
+    });
+    const s = createSession_(user.user_id);
+    return {ok:true, session: s.token, user: pickUser_(user)};
+  } catch(e){ return {error:'google error: '+e}; }
 }
 
 /* ===== Users / Sessions ===== */
