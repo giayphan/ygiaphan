@@ -168,6 +168,8 @@ if (cfg.GOOGLE_CLIENT_ID){
     if (typeof google === 'undefined' || !google.accounts) { setTimeout(initGoogle, 200); return; }
     google.accounts.id.initialize({
       client_id: cfg.GOOGLE_CLIENT_ID,
+      use_fedcm_for_prompt: true,
+      use_fedcm_for_button: true,
       callback: async (resp) => {
         $('#msg').innerHTML = '<div class="msg msg--ok"><span class="yp-spinner"></span> กำลังเข้าสู่ระบบ…</div>';
         try {

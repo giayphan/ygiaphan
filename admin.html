@@ -392,6 +392,8 @@ function startExpTimer(){
     if (typeof google === 'undefined' || !google.accounts) { setTimeout(tryInit, 200); return; }
     google.accounts.id.initialize({
       client_id: cid,
+      use_fedcm_for_prompt: true,
+      use_fedcm_for_button: true,
       callback: async (resp) => {
         setStatus('กำลังตรวจสอบ...');
         busy(true);
