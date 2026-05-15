@@ -1,0 +1,23 @@
+{
+  "name": "ygiaphan — Học tiếng Việt",
+  "short_name": "ygiaphan",
+  "description": "บล็อกสอนภาษาเวียดนามสำหรับคนไทย",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6fbf3",
+  "theme_color": "#2d8a4e",
+  "lang": "vi",
+  "categories": ["education", "books"],
+  "icons": [
+    {"src": "assets/img/logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "assets/img/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "assets/img/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ],
+  "shortcuts": [
+    {"name": "ทบทวนศัพท์", "url": "./me.html#vocab", "icons": [{"src":"assets/img/logo.png","sizes":"192x192"}]},
+    {"name": "คอร์ส", "url": "./courses.html"},
+    {"name": "ค้นหา", "url": "./index.html?search=1"}
+  ]
+}

@@ -9,5 +9,6 @@ window.YP_NAV = [
   ]},
   { vi: "Chủ đề",    th: "หมวด",     url: "category.html" },
   { vi: "Giới thiệu", th: "เกี่ยวกับ", url: "about.html" },
-  { vi: "Liên hệ",   th: "ติดต่อ",    url: "contact.html" }
+  { vi: "Liên hệ",   th: "ติดต่อ",    url: "contact.html" },
+  { vi: "Tôi",       th: "โปรไฟล์",   url: "me.html" }
 ];

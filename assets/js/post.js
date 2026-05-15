@@ -17,8 +17,21 @@
   if (!meta){ root.innerHTML = `<p>${T.not_found||'Not found'}</p>`; return; }
 
   const title = window.pickL(meta, 'title');
-  const md = window.pickL(meta, 'body');
+  let md = window.pickL(meta, 'body');
+  // Extract vocab/quiz blocks before markdown
+  const learn = window.YP_parseLearn ? window.YP_parseLearn(md) : {md, vocab:[], quiz:[]};
+  md = learn.md;
+  // Premium / members_only: ตัด body แสดงเฉพาะ teaser ถ้าไม่ได้ login
+  const membersOnly = meta.members_only === true || String(meta.members_only).toLowerCase() === 'true';
+  const isLogin = window.YP_AUTH && window.YP_AUTH.isLogin();
+  if (membersOnly && !isLogin){
+    const teaser = (md||'').split('\n\n').slice(0,2).join('\n\n');
+    md = teaser + `\n\n---\n\n> 🔒 **เนื้อหานี้สำหรับสมาชิกเท่านั้น**\n>\n> [เข้าสู่ระบบ →](login.html)`;
+  }
   let body = window.marked ? marked.parse(md) : md;
+  // Inject vocab/quiz UI at placeholders
+  body = body.replace(/<!--YP_VOCAB-->/, () => window.YP_renderVocab ? window.YP_renderVocab(learn.vocab, slug) : '');
+  body = body.replace(/<!--YP_QUIZ-->/,  () => window.YP_renderQuiz  ? window.YP_renderQuiz(learn.quiz, slug)   : '');
   // wrap Vietnamese tokens in serif when current lang is Thai
   if (window.YP_LANG === 'th') body = window.wrapVN(body);
 
@@ -31,6 +44,11 @@
   const views = window.bumpView(slug);
 
   document.title = `${title} · ${(window.YP_SITE||{}).title||''}`;
+  if (window.YP_setOG) window.YP_setOG({
+    title, type:'article',
+    description: window.pickL(meta, 'desc') || (md||'').slice(0,160),
+    image: meta.cover || (location.origin + (location.pathname.replace(/[^/]*$/, '')) + 'assets/img/logo.png')
+  });
 
   // captcha state
   const captcha = makeCaptcha();
@@ -46,6 +64,8 @@
         <span class="views"><span class="ico-eye"></span> ${views.toLocaleString()} ${T.views||''}</span>
         <span>·</span>
         <button class="like ${window.isLiked(slug)?'is-on':''}" data-like="${slug}">♥ <span class="like__n">${window.getLikes(slug)}</span></button>
+        <span>·</span>
+        <button class="bookmark" data-bookmark="${slug}" title="บันทึกบทความ" hidden>☆ <span class="bookmark__t">บันทึก</span></button>
       </div>
       ${meta.cover ? `<img class="post__cover" src="${meta.cover}" alt="">` : ''}
     </header>
@@ -72,6 +92,31 @@
     </section>`;
 
   await renderComments(slug);
+
+  // Bind vocab + quiz
+  if (window.YP_bindVocab) window.YP_bindVocab(root, slug);
+  if (window.YP_bindQuiz)  window.YP_bindQuiz(root, slug);
+
+  // Bookmark (member only)
+  if (window.YP_AUTH && window.YP_AUTH.isLogin()){
+    const bmBtn = root.querySelector('[data-bookmark]');
+    if (bmBtn){
+      bmBtn.hidden = false;
+      const updBtn = on => { bmBtn.classList.toggle('is-on', on); bmBtn.firstChild.nodeValue = on?'★ ':'☆ '; };
+      try {
+        const list = await window.YP_API.bookmarkList();
+        if (list.ok) updBtn(list.slugs.includes(slug));
+      } catch(_){}
+      bmBtn.onclick = async () => {
+        bmBtn.disabled = true;
+        try {
+          const r = await window.YP_API.bookmarkToggle(slug);
+          if (r.ok) updBtn(r.bookmarked);
+        } finally { bmBtn.disabled = false; }
+      };
+    }
+  }
+
   root.querySelector('[data-form]').addEventListener('submit', async e => {
     e.preventDefault();
     const f = e.currentTarget;
@@ -122,15 +167,50 @@ async function renderComments(slug){
     if (el) el.innerHTML = `<p class="yp-loading"><span class="yp-spinner"></span> …</p>`;
     try {
       const remote = await window.YP_API.listComments(slug);
-      list = (remote||[]).map(c => ({name:c.name, msg:c.msg, ts:Number(c.ts)||Date.now()}));
+      list = (remote||[]).map(c => ({name:c.name, msg:c.msg, ts:Number(c.ts)||Date.now(), avatar:c.avatar||'', is_member:!!c.is_member, parent_ts:Number(c.parent_ts)||0}));
     } catch(_){}
   }
   const T = window.YP_T||{};
   if (!list.length){ el.innerHTML = `<p class="muted">${T.comment_empty||'No comments yet'}</p>`; return; }
-  el.innerHTML = list.map(c => `
-    <div class="comment yp-fade-in">
-      <div class="comment__head"><strong>${escapeHtml(c.name)}</strong> · <span class="muted">${new Date(c.ts).toLocaleString()}</span></div>
-      <div class="comment__body">${escapeHtml(c.msg).replace(/\n/g,'<br>')}</div>
-    </div>`).join('');
+  // build tree
+  const byParent = {0:[]};
+  list.forEach(c => { (byParent[c.parent_ts||0] ||= []).push(c); });
+  function renderOne(c){
+    const av = c.avatar ? `<img class="comment__avatar" src="${escapeHtml(c.avatar)}" alt="">` : `<span class="comment__avatar comment__avatar--ph">${escapeHtml((c.name||'?')[0])}</span>`;
+    const badge = c.is_member ? `<span class="comment__badge" title="สมาชิก">✓</span>` : '';
+    const replies = (byParent[c.ts]||[]).map(renderOne).join('');
+    return `<div class="comment yp-fade-in">
+      ${av}
+      <div class="comment__main">
+        <div class="comment__head"><strong>${escapeHtml(c.name)}</strong>${badge} · <span class="muted">${new Date(c.ts).toLocaleString()}</span></div>
+        <div class="comment__body">${escapeHtml(c.msg).replace(/\n/g,'<br>')}</div>
+        <div class="comment__actions"><button class="comment__action" data-reply="${c.ts}">↩ ตอบกลับ</button></div>
+        ${replies?`<div class="comment__replies">${replies}</div>`:''}
+      </div>
+    </div>`;
+  }
+  el.innerHTML = (byParent[0]||[]).map(renderOne).join('');
+  // bind reply buttons
+  el.querySelectorAll('[data-reply]').forEach(btn => {
+    btn.onclick = () => {
+      el.querySelectorAll('.comment__reply-form').forEach(f => f.remove());
+      const main = btn.closest('.comment__main');
+      const form = document.createElement('form');
+      form.className = 'comment__reply-form';
+      form.innerHTML = `<textarea required maxlength="2000" placeholder="ตอบกลับ..."></textarea><button type="submit" class="btn btn--primary">ส่ง</button>`;
+      main.querySelector('.comment__actions').after(form);
+      form.querySelector('textarea').focus();
+      form.onsubmit = async e => {
+        e.preventDefault();
+        const msg = form.querySelector('textarea').value.trim();
+        if (!msg) return;
+        const name = (window.YP_AUTH && window.YP_AUTH.isLogin())
+          ? ((await window.YP_AUTH.me())?.user?.name || 'Member')
+          : (prompt('ชื่อของคุณ:') || 'Guest');
+        await window.YP_API.addComment(slug, name, msg, btn.dataset.reply);
+        await renderComments(slug);
+      };
+    };
+  });
 }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }

@@ -6,9 +6,11 @@
 <title>Admin · ygiaphan</title>
 <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://script.google.com https://script.googleusercontent.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src https://script.google.com https://script.googleusercontent.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://script.google.com https://script.googleusercontent.com https://accounts.google.com; script-src 'self' 'unsafe-inline' https://accounts.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src https://script.google.com https://script.googleusercontent.com https://accounts.google.com; frame-src https://accounts.google.com">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <link rel="stylesheet" href="assets/css/main.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="content/config.js"></script>
 <style>
   :root{
     --ad-bg:#f6fbf3; --ad-card:#fff; --ad-fg:#234231; --ad-muted:#6b8077;
@@ -70,6 +72,22 @@
   .ad .pill--warn{background:#fff3cd;color:#856404} .ad .pill--danger{background:#fde2e0;color:#a03020}
   .ad .pill--ok{background:#d4edda;color:#155724}
   .ad .status{color:var(--ad-muted);font-size:.9em;display:inline-flex;gap:6px;align-items:center}
+  .ad-badge{background:var(--ad-danger);color:#fff;font-size:.7rem;padding:1px 7px;border-radius:99px;margin-left:4px;font-weight:700}
+  .ad-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:14px}
+  .ad-stat{background:var(--ad-card);border:1px solid var(--ad-line);border-radius:12px;padding:14px;text-align:left}
+  .ad-stat__label{color:var(--ad-muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  .ad-stat__val{font-size:1.7rem;font-weight:700;color:var(--ad-brand);margin:4px 0 0;line-height:1}
+  .ad-stat__sub{color:var(--ad-muted);font-size:.78rem;margin-top:2px}
+  .ad-chart{display:flex;align-items:flex-end;gap:4px;height:120px;padding:8px 0}
+  .ad-chart__bar{flex:1;background:var(--ad-brand-dim);border-radius:4px 4px 0 0;position:relative;min-height:2px;transition:background .15s}
+  .ad-chart__bar:hover{background:var(--ad-brand)}
+  .ad-chart__bar::after{content:attr(data-v);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:.7rem;color:var(--ad-muted);margin-bottom:2px}
+  .ad-chart__bar::before{content:attr(data-d);position:absolute;top:100%;left:50%;transform:translateX(-50%) rotate(-60deg);transform-origin:left top;font-size:.65rem;color:var(--ad-muted);margin-top:4px;white-space:nowrap}
+  .ad-recent{font-size:.88rem;line-height:1.5}
+  .ad-recent__row{padding:6px 0;border-bottom:1px dashed var(--ad-line)}
+  .ad-recent__row:last-child{border:0}
+  .ad-recent__time{color:var(--ad-muted);font-size:.78rem;margin-left:6px}
+  @media(max-width:700px){ .ad .row{grid-template-columns:1fr !important} }
   .ad .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 </style>
 </head>
@@ -82,6 +100,8 @@
   <!-- Login form (ก่อน login) -->
   <div class="card" id="loginBox">
     <h3 style="margin-top:0;color:var(--ad-brand)">🔒 เข้าสู่ระบบ Admin</h3>
+    <div id="gAdminBtn" style="margin-bottom:14px;display:flex;justify-content:center"></div>
+    <p class="muted" style="text-align:center;margin:0 0 12px;font-size:.85em">— หรือ —</p>
     <form id="loginForm" style="display:grid;gap:10px;max-width:400px">
       <input id="key" type="password" placeholder="🔑 Admin key" required autocomplete="off">
       <input id="otpField" type="text" placeholder="OTP 6 หลัก (จาก email)" maxlength="6"
@@ -104,15 +124,28 @@
   <!-- เนื้อหา admin ทั้งหมด -->
   <div id="adminBody" hidden>
   <div class="tabs">
-    <button data-tab="posts" class="is-active">📝 Posts</button>
-    <button data-tab="comments">💬 Comments</button>
+    <button data-tab="dashboard" class="is-active">📊 Dashboard</button>
+    <button data-tab="posts">📝 Posts</button>
+    <button data-tab="comments">💬 Comments <span id="cmtBadge" class="ad-badge" hidden></span></button>
     <button data-tab="orders">🛒 Orders</button>
     <button data-tab="users">👥 Users</button>
     <button data-tab="donations">💝 Donations</button>
   </div>
 
+  <!-- DASHBOARD -->
+  <div class="panel is-active" data-panel="dashboard">
+    <div class="toolbar"><button class="btn btn--ghost" id="d-reload">↻ Reload</button></div>
+    <div id="d-stats" class="ad-stats"></div>
+    <div class="card"><h3 style="margin-top:0">📈 New signups (last 14 days)</h3><div id="d-chart" class="ad-chart"></div></div>
+    <div class="row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card"><h3 style="margin-top:0">🔥 Top posts (by comments)</h3><div id="d-top"></div></div>
+      <div class="card"><h3 style="margin-top:0">⏱ Recent activity</h3><div id="d-recent"></div></div>
+    </div>
+    <div class="card"><h3 style="margin-top:0">🛡 Pending comments</h3><div id="d-pending"></div></div>
+  </div>
+
   <!-- POSTS -->
-  <div class="panel is-active" data-panel="posts">
+  <div class="panel" data-panel="posts">
     <div class="toolbar">
       <button class="btn" id="p-new">+ New Post</button>
       <button class="btn btn--ghost" id="p-reload">↻ Reload</button>
@@ -235,8 +268,80 @@ function showAdmin(){
   show($('#topbar'), true);
   show($('#adminBody'), true);
   loadAll();
+  loadDashboard();
   startExpTimer();
 }
+
+async function loadDashboard(){
+  try {
+    const r = await post({action:'admin_stats'});
+    if (!r.ok) return;
+    const s = r.stats;
+    // stat cards
+    const cards = [
+      {label:'Users', val:s.users_total, sub:`+${s.users_7d} this week`},
+      {label:'Comments', val:s.comments_total, sub:s.comments_pending?`⚠ ${s.comments_pending} pending`:'all approved'},
+      {label:'Orders', val:s.orders_total, sub:`${s.orders_paid} paid · ${s.orders_pending} pending`},
+      {label:'Revenue', val:s.revenue_paid.toLocaleString(), sub:'THB (paid)'},
+      {label:'Posts', val:s.posts_published, sub:`${s.posts_total} total`}
+    ];
+    $('#d-stats').innerHTML = cards.map(c => `
+      <div class="ad-stat">
+        <div class="ad-stat__label">${c.label}</div>
+        <div class="ad-stat__val">${c.val}</div>
+        <div class="ad-stat__sub">${c.sub}</div>
+      </div>`).join('');
+
+    // chart
+    const max = Math.max(1, ...r.chart.map(x=>x.count));
+    $('#d-chart').innerHTML = r.chart.map(x => {
+      const h = (x.count/max*100).toFixed(0);
+      const dd = x.date.slice(5); // MM-DD
+      return `<div class="ad-chart__bar" style="height:${h}%" data-v="${x.count||''}" data-d="${dd}"></div>`;
+    }).join('');
+
+    // top posts
+    $('#d-top').innerHTML = r.top_posts.length
+      ? r.top_posts.map(p => `<div class="item"><a href="post.html?slug=${encodeURIComponent(p.slug)}" target="_blank">${p.title}</a><span class="pill">💬 ${p.comments}</span></div>`).join('')
+      : '<p class="muted">ยังไม่มีคอมเมนต์</p>';
+
+    // recent activity
+    $('#d-recent').innerHTML = r.recent.length
+      ? `<div class="ad-recent">${r.recent.map(x => `<div class="ad-recent__row">${x.label}<span class="ad-recent__time">${timeAgo(x.ts)}</span></div>`).join('')}</div>`
+      : '<p class="muted">ไม่มีกิจกรรม</p>';
+
+    // pending comments badge
+    if (s.comments_pending){
+      $('#cmtBadge').textContent = s.comments_pending; $('#cmtBadge').hidden = false;
+    } else { $('#cmtBadge').hidden = true; }
+
+    // pending list
+    const pr = await post({action:'admin_pending'});
+    if (pr.ok){
+      $('#d-pending').innerHTML = pr.comments.length
+        ? pr.comments.map(c => `<div class="item">
+            <div><strong>${escapeHtml(c.name)}</strong> on <em>${c.slug}</em><br><small class="muted">${escapeHtml(c.msg).slice(0,100)}</small></div>
+            <button class="btn btn--sm" data-approve="${c.ts}" data-slug="${c.slug}">✓ Approve</button>
+          </div>`).join('')
+        : '<p class="muted">✓ ไม่มี comment ที่รออนุมัติ</p>';
+      $('#d-pending').querySelectorAll('[data-approve]').forEach(btn => btn.onclick = async () => {
+        btn.disabled = true; btn.textContent = '...';
+        const r = await post({action:'admin_approve', ts: btn.dataset.approve, slug: btn.dataset.slug});
+        if (r.ok) loadDashboard();
+        else { btn.disabled = false; btn.textContent = '✗ '+r.error; }
+      });
+    }
+  } catch(e){ console.error('dashboard load failed', e); }
+}
+
+function timeAgo(ts){
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s<60) return s+'s ago';
+  if (s<3600) return Math.floor(s/60)+'m ago';
+  if (s<86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function startExpTimer(){
   if (expInterval) clearInterval(expInterval);
   expInterval = setInterval(() => {
@@ -249,6 +354,34 @@ function startExpTimer(){
     }
   }, 1000);
 }
+
+// Google Sign-In (admin only)
+(function initGoogleAdmin(){
+  const cid = (window.YP_CONFIG||{}).GOOGLE_CLIENT_ID;
+  if (!cid) { document.getElementById('gAdminBtn').innerHTML='<small class="muted">⚠ ตั้ง GOOGLE_CLIENT_ID ใน config.js</small>'; return; }
+  function tryInit(){
+    if (typeof google === 'undefined' || !google.accounts) { setTimeout(tryInit, 200); return; }
+    google.accounts.id.initialize({
+      client_id: cid,
+      callback: async (resp) => {
+        setStatus('กำลังตรวจสอบ...');
+        busy(true);
+        try {
+          const r = await post({action:'admin_google', id_token: resp.credential});
+          if (r.error){ setStatus('✗ ' + r.error + ' (ใช้เฉพาะ admin email)'); return; }
+          if (r.ok && r.admin_token){
+            sessionStorage.setItem(TOKEN_LS, r.admin_token);
+            tokenExpAt = Date.now() + r.expires_in*1000;
+            showAdmin();
+          }
+        } finally { busy(false); }
+      }
+    });
+    google.accounts.id.renderButton(document.getElementById('gAdminBtn'),
+      {theme:'outline', size:'large', text:'signin_with', width:320});
+  }
+  tryInit();
+})();
 
 $('#loginForm').addEventListener('submit', async e => {
   e.preventDefault();
@@ -309,7 +442,9 @@ resetIdle();
 $$('.tabs button').forEach(btn => btn.onclick = () => {
   $$('.tabs button').forEach(b => b.classList.toggle('is-active', b===btn));
   $$('.panel').forEach(p => p.classList.toggle('is-active', p.dataset.panel===btn.dataset.tab));
+  if (btn.dataset.tab === 'dashboard') loadDashboard();
 });
+$('#d-reload')?.addEventListener('click', loadDashboard);
 
 /* ===== Load all ===== */
 async function loadAll(){

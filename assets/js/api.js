@@ -33,12 +33,21 @@
     listComments(slug){ return getJSON(cfg.API_URL + '?action=comments&slug=' + encodeURIComponent(slug)); },
     addComment(slug, name, msg){
       const token = window.YP_AUTH ? window.YP_AUTH.token() : '';
-      return postJSON({action:'comment', slug, name, msg, token});
+      const parent_ts = arguments[3] || '';
+      return postJSON({action:'comment', slug, name, msg, token, parent_ts});
     },
     listCourses(){ return getJSON(cfg.API_URL + '?action=courses'); },
     orderCreate(item_id){ return postJSON({action:'order_create', token: window.YP_AUTH.token(), item_id}); },
     orderSubmitSlip(order_id, slip_url){ return postJSON({action:'order_slip', token: window.YP_AUTH.token(), order_id, slip_url}); },
     donateLog(name, amount, channel, note){ return postJSON({action:'donate_log', name, amount, channel, note}); },
+    bookmarkToggle(slug){ return postJSON({action:'bookmark_toggle', token: window.YP_AUTH.token(), slug}); },
+    bookmarkList(){ return postJSON({action:'bookmark_list', token: window.YP_AUTH.token()}); },
+    myOrders(){ return postJSON({action:'my_orders', token: window.YP_AUTH.token()}); },
+    vocabSave(vi,th,slug){ return postJSON({action:'vocab_save', token: window.YP_AUTH.token(), vi, th, slug}); },
+    vocabDue(){ return postJSON({action:'vocab_due', token: window.YP_AUTH.token()}); },
+    vocabReview(vi, correct){ return postJSON({action:'vocab_review', token: window.YP_AUTH.token(), vi, correct}); },
+    quizSubmit(slug, score, total){ return postJSON({action:'quiz_submit', token: window.YP_AUTH.token(), slug, score, total}); },
+    leaderboard(days){ return postJSON({action:'leaderboard', days: days||30}); },
     upsertPost(key, post){ return postJSON({action:'post', key, ...post}); },
     deletePost(key, slug){ return postJSON({action:'delete', key, slug}); }
   };

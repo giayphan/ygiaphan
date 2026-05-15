@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>โปรไฟล์ · ygiaphan</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="assets/img/favicon.svg">
+<link rel="stylesheet" href="assets/css/main.css">
+<style>
+  .me-wrap{max-width:760px;margin:32px auto;padding:0 16px}
+  .me-hero{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+  .me-hero img{width:72px;height:72px;border-radius:50%;border:2px solid var(--brand-bg)}
+  .me-hero h1{margin:0;font-size:1.3rem;color:var(--brand)}
+  .me-hero .sub{color:var(--muted);font-size:.9rem;margin:2px 0 0}
+  .me-tabs{display:flex;gap:4px;border-bottom:2px solid var(--line);margin-bottom:16px}
+  .me-tab{padding:10px 18px;cursor:pointer;border:none;background:none;font:inherit;color:var(--muted);font-weight:600;border-bottom:2px solid transparent;margin-bottom:-2px}
+  .me-tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+  .me-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:10px}
+  .me-card h3{margin:0 0 4px;font-size:1rem}
+  .me-card .meta{color:var(--muted);font-size:.85rem}
+  .me-empty{text-align:center;color:var(--muted);padding:32px}
+  .pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.78rem;font-weight:600}
+  .pill--pending{background:#fff3cd;color:#856404}
+  .pill--paid{background:#d4edda;color:#155724}
+  .pill--cancel{background:#fde2e0;color:#a03020}
+  .me-actions{margin-top:16px;text-align:right}
+  .btn--ghost{background:none;border:1px solid var(--line);color:var(--fg);padding:8px 16px;border-radius:8px;cursor:pointer}
+  .btn--ghost:hover{background:var(--brand-bg)}
+</style>
+</head>
+<body>
+<div data-include="header"></div>
+
+<main class="me-wrap">
+  <div id="loading" style="text-align:center;padding:40px"><span class="yp-spinner"></span> กำลังโหลด…</div>
+
+  <div id="content" hidden>
+    <div class="me-hero">
+      <img id="meAvatar" src="" alt="">
+      <div style="flex:1">
+        <h1 id="meName"></h1>
+        <p class="sub" id="meEmail"></p>
+        <p class="sub" id="meProvider"></p>
+      </div>
+      <button class="btn--ghost" id="logoutBtn">ออกจากระบบ</button>
+    </div>
+
+    <div class="me-tabs">
+      <button class="me-tab active" data-tab="vocab">🎴 ทบทวนศัพท์ <span id="vocabBadge" class="ad-badge" hidden></span></button>
+      <button class="me-tab" data-tab="bookmarks">⭐ Bookmarks</button>
+      <button class="me-tab" data-tab="orders">🛒 คำสั่งซื้อ</button>
+      <button class="me-tab" data-tab="leaderboard">🏆 อันดับ</button>
+    </div>
+
+    <div id="tab-vocab" class="tab-pane"></div>
+    <div id="tab-bookmarks" class="tab-pane" hidden></div>
+    <div id="tab-orders" class="tab-pane" hidden></div>
+    <div id="tab-leaderboard" class="tab-pane" hidden></div>
+  </div>
+</main>
+
+<div data-include="footer"></div>
+
+<script src="content/config.js"></script>
+<script src="content/i18n/vi.js"></script>
+<script src="content/i18n/th.js"></script>
+<script src="content/site.js"></script>
+<script src="content/nav.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/api.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+
+if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
+  const meR = await window.YP_AUTH.me();
+  if (!meR || !meR.ok){ window.YP_AUTH.setToken(''); location.href='login.html'; return; }
+  const u = meR.user;
+  $('#meAvatar').src = u.avatar || 'assets/img/favicon.svg';
+  $('#meName').textContent = u.name || u.email;
+  $('#meEmail').textContent = u.email;
+  $('#meProvider').textContent = 'login ผ่าน: ' + (u.provider || 'email');
+  $('#loading').hidden = true;
+  $('#content').hidden = false;
+
+  // Tabs
+  document.querySelectorAll('.me-tab').forEach(t => t.onclick = () => {
+    document.querySelectorAll('.me-tab').forEach(x => x.classList.toggle('active', x===t));
+    document.querySelectorAll('.tab-pane').forEach(p => p.hidden = (p.id !== 'tab-'+t.dataset.tab));
+  });
+
+  // Bookmarks
+  const bm = await window.YP_API.bookmarkList();
+  const bmEl = $('#tab-bookmarks');
+  if (bm.ok && bm.slugs.length){
+    bmEl.innerHTML = bm.slugs.map(s => `
+      <div class="me-card">
+        <h3><a href="post.html?slug=${encodeURIComponent(s)}">${s}</a></h3>
+        <p class="meta">slug: ${s}</p>
+      </div>`).join('');
+  } else {
+    bmEl.innerHTML = '<div class="me-empty">ยังไม่มีบทความที่บันทึกไว้<br><small>กดรูป ⭐ ในหน้าบทความเพื่อบันทึก</small></div>';
+  }
+
+  // Orders
+  const od = await window.YP_API.myOrders();
+  const odEl = $('#tab-orders');
+  if (od.ok && od.orders.length){
+    odEl.innerHTML = od.orders.map(o => {
+      const cls = o.status==='paid'?'paid':(o.status==='cancelled'?'cancel':'pending');
+      const date = o.created_at ? new Date(+o.created_at).toLocaleDateString('th-TH') : '';
+      return `<div class="me-card">
+        <h3>${o.item_title}</h3>
+        <p class="meta">${date} · ${o.amount} ${o.currency} · <span class="pill pill--${cls}">${o.status}</span></p>
+        ${o.slip_url?`<p class="meta"><a href="${o.slip_url}" target="_blank">ดูสลิป →</a></p>`:''}
+      </div>`;
+    }).join('');
+  } else {
+    odEl.innerHTML = '<div class="me-empty">ยังไม่มีคำสั่งซื้อ<br><small><a href="courses.html">ดูคอร์ส →</a></small></div>';
+  }
+
+  // Vocab review (Flashcard)
+  const vEl = $('#tab-vocab');
+  async function renderVocab(){
+    const r = await window.YP_API.vocabDue();
+    if (!r.ok || !r.items.length){
+      vEl.innerHTML = '<div class="me-empty">✓ ไม่มีศัพท์ที่ต้องทบทวนตอนนี้<br><small>ไปบันทึกศัพท์จากบทความได้เลย</small></div>';
+      $('#vocabBadge').hidden = true;
+      return;
+    }
+    $('#vocabBadge').textContent = r.items.length; $('#vocabBadge').hidden = false;
+    let i = 0; let flipped = false;
+    function showCard(){
+      if (i >= r.items.length){
+        vEl.innerHTML = '<div class="me-empty">🎉 จบรอบทบทวนแล้ว!<br><small><a href="javascript:void(0)" onclick="location.reload()">โหลดใหม่</a></small></div>';
+        return;
+      }
+      const v = r.items[i]; flipped = false;
+      vEl.innerHTML = `
+        <div class="flashcard-progress">การ์ด ${i+1} / ${r.items.length} · กล่อง ${v.box}</div>
+        <div class="flashcard" id="fcard">
+          <div class="flashcard__front vn">${v.vi}</div>
+          <div class="flashcard__back" hidden>${v.th}</div>
+          <div class="flashcard__hint">คลิกเพื่อดูคำแปล</div>
+        </div>
+        <div class="flashcard__actions" id="fact" hidden>
+          <button class="btn btn--ghost" id="fwrong">✗ ยังไม่จำ</button>
+          <button class="btn btn--primary" id="fright">✓ จำได้</button>
+        </div>`;
+      $('#fcard').onclick = () => {
+        if (flipped) return;
+        flipped = true;
+        $('#fcard').querySelector('.flashcard__back').hidden = false;
+        $('#fcard').querySelector('.flashcard__hint').textContent = 'จำได้มั้ย?';
+        $('#fact').hidden = false;
+      };
+      $('#fright').onclick = async () => { await window.YP_API.vocabReview(v.vi, true); i++; showCard(); };
+      $('#fwrong').onclick = async () => { await window.YP_API.vocabReview(v.vi, false); i++; showCard(); };
+    }
+    showCard();
+  }
+  await renderVocab();
+
+  // Leaderboard
+  const lbEl = $('#tab-leaderboard');
+  let lbLoaded = false;
+  async function renderLB(){
+    if (lbLoaded) return; lbLoaded = true;
+    const r = await window.YP_API.leaderboard(30);
+    if (!r.ok || !r.leaderboard.length){
+      lbEl.innerHTML = '<div class="me-empty">ยังไม่มีคะแนน<br><small>ลองทำ quiz จบบทความเพื่อสะสมคะแนน</small></div>';
+      return;
+    }
+    lbEl.innerHTML = `<p class="muted" style="text-align:center">🏆 30 วันล่าสุด</p>` +
+      r.leaderboard.map((x,i) => `
+        <div class="me-card" style="display:flex;align-items:center;gap:12px">
+          <strong style="font-size:1.3rem;color:var(--brand);width:30px">${i+1}</strong>
+          <img src="${x.avatar||'assets/img/favicon.svg'}" style="width:40px;height:40px;border-radius:50%;object-fit:cover">
+          <div style="flex:1"><strong>${x.name||'(ไม่ระบุ)'}</strong><div class="meta">${x.attempts} quizzes</div></div>
+          <strong style="color:var(--brand);font-size:1.2rem">${x.points} pts</strong>
+        </div>`).join('');
+  }
+  // bind tab switch (override default to call renderLB)
+  document.querySelectorAll('.me-tab').forEach(t => t.addEventListener('click', () => {
+    if (t.dataset.tab === 'leaderboard') renderLB();
+  }));
+
+  $('#logoutBtn').onclick = async () => {
+    await window.YP_AUTH.logout();
+    location.href = 'index.html';
+  };
+})();
+</script>
+</body>
+</html>

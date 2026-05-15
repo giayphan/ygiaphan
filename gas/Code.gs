@@ -12,7 +12,7 @@
 
 const SHEET_ID  = 'PUT_YOUR_SHEET_ID_HERE';
 const ADMIN_KEY = 'change-me-please';
-const ADMIN_EMAIL = 'admin@example.com';   // รับ OTP 2FA + แจ้งเตือน login
+const ADMIN_EMAIL = 'giayphan@gmail.com';   // รับ OTP 2FA + แจ้งเตือน login + Google admin login
 const SITE_URL  = 'https://yourname.github.io/ygiaphan';
 const FB_APP_ID = '1625605325597983';
 const MAGIC_TTL_MIN = 15;
@@ -31,7 +31,8 @@ const DONATE_MAX_PER_FP_HOUR = 3;
 const SH = {
   posts:'posts', comments:'comments', users:'users',
   sessions:'sessions', orders:'orders', donations:'donations',
-  magic:'magic_tokens', courses:'courses',
+  magic:'magic_tokens', courses:'courses', bookmarks:'bookmarks',
+  vocab:'user_vocab', quiz_log:'quiz_log',
   admin_sessions:'admin_sessions', admin_log:'admin_log', admin_fails:'admin_fails'
 };
 
@@ -44,13 +45,16 @@ function setup(){
   const ss = SpreadsheetApp.openById(SHEET_ID);
   ensureSheet_(ss, SH.posts, ['slug','date','categories','icon','cover','video',
     'title_vi','title_th','desc_vi','desc_th','body_vi','body_th','published','members_only']);
-  ensureSheet_(ss, SH.comments, ['ts','slug','name','msg','user_id','approved']);
+  ensureSheet_(ss, SH.comments, ['ts','slug','name','msg','user_id','approved','parent_ts']);
   ensureSheet_(ss, SH.users, ['user_id','email','name','provider','fb_id','avatar','created_at','last_login']);
   ensureSheet_(ss, SH.sessions, ['token','user_id','created_at','expires_at']);
   ensureSheet_(ss, SH.orders, ['order_id','user_id','email','item_id','item_title','amount','currency','status','slip_url','created_at','paid_at','note']);
   ensureSheet_(ss, SH.donations, ['ts','name','amount','channel','note']);
   ensureSheet_(ss, SH.magic, ['token','email','created_at','expires_at','used']);
   ensureSheet_(ss, SH.courses, ['id','price','currency','title_vi','title_th','desc_vi','desc_th','active']);
+  ensureSheet_(ss, SH.bookmarks, ['user_id','slug','created_at']);
+  ensureSheet_(ss, SH.vocab, ['user_id','vi','th','slug','box','due_at','created_at']);
+  ensureSheet_(ss, SH.quiz_log, ['user_id','slug','score','total','ts']);
   ensureSheet_(ss, SH.admin_sessions, ['token','fingerprint','created_at','expires_at','last_seen']);
   ensureSheet_(ss, SH.admin_log,      ['ts','action','target','fingerprint','ok','detail']);
   ensureSheet_(ss, SH.admin_fails,    ['ts','fingerprint','reason']);
@@ -107,6 +111,14 @@ function doPostBody_(b){
     if (a === 'magic_verify')  return json_(magicVerifyApi_(b));
     if (a === 'fb_login')      return json_(fbLogin_(b));
     if (a === 'google_login')  return json_(googleLogin_(b));
+    if (a === 'bookmark_toggle') return json_(bookmarkToggle_(b));
+    if (a === 'bookmark_list')   return json_(bookmarkList_(b));
+    if (a === 'my_orders')       return json_(myOrders_(b));
+    if (a === 'vocab_save')      return json_(vocabSave_(b));
+    if (a === 'vocab_review')    return json_(vocabReview_(b));
+    if (a === 'vocab_due')       return json_(vocabDue_(b));
+    if (a === 'quiz_submit')     return json_(quizSubmit_(b));
+    if (a === 'leaderboard')     return json_(leaderboard_(b));
     if (a === 'logout')        return json_(logout_(b));
     if (a === 'order_create')  return json_(orderCreate_(b));
     if (a === 'order_slip')    return json_(orderSubmitSlip_(b));
@@ -114,8 +126,12 @@ function doPostBody_(b){
     if (a === 'donate_log')    return json_(donateLog_(b));
     if (a === 'admin_login')   return json_(adminLogin_(b));
     if (a === 'admin_login_otp') return json_(adminLoginOtp_(b));
+    if (a === 'admin_google')    return json_(adminGoogleLogin_(b));
     if (a === 'admin_logout')    return json_(adminLogoutCall_(b));
     if (a === 'admin_check')   return json_({ok: !!requireAdmin_(b)});
+    if (a === 'admin_stats')   return json_(adminStats_(b));
+    if (a === 'admin_pending') return json_(adminPendingComments_(b));
+    if (a === 'admin_approve') return json_(adminApproveComment_(b));
     return json_({error:'unknown action: ' + a});
   } catch(e){
     return json_({error: 'server: ' + (e.message||e), stack: String(e.stack||'').slice(0,500)});
@@ -248,6 +264,24 @@ function adminIssueToken_(fp){
   adminLog_('login_ok', '', fp, true, '');
   return {ok:true, admin_token: token, expires_in: ADMIN_TTL_MIN*60};
 }
+function adminGoogleLogin_(b){
+  const fp = String(b.fp||'').slice(0,128);
+  const idToken = String(b.id_token||'');
+  if (!idToken) return {error:'no token'};
+  if (failsRecent_(fp) >= 5){ adminLog_('login_blocked', '', fp, false, 'too many fails'); return {error:'blocked, try again later'}; }
+  try {
+    const res = UrlFetchApp.fetch('https://oauth2.googleapis.com/tokeninfo?id_token='+encodeURIComponent(idToken));
+    const g = JSON.parse(res.getContentText());
+    if (!g.sub || !g.email){ recordFail_(fp,'invalid_google'); adminLog_('admin_google_fail','',fp,false,'invalid token'); return {error:'invalid token'}; }
+    if (String(g.email).toLowerCase() !== String(ADMIN_EMAIL).toLowerCase()){
+      recordFail_(fp,'not_admin');
+      adminLog_('admin_google_fail', g.email, fp, false, 'not admin email');
+      return {error:'not authorized'};
+    }
+    return adminIssueToken_(fp);
+  } catch(e){ return {error:'google error: '+e}; }
+}
+
 function adminLogoutCall_(b){
   const sh = sheet_(SH.admin_sessions);
   if (sh){
@@ -328,9 +362,15 @@ function maskEmails_(s){
 }
 function listComments_(slug){
   if (!slug) return [];
+  const users = rowsAsObjects_(sheet_(SH.users));
+  const uMap = {}; users.forEach(u => { if(u.user_id) uMap[u.user_id] = {avatar:u.avatar||'', name:u.name||''}; });
   return rowsAsObjects_(sheet_(SH.comments))
     .filter(c => c.slug === slug && String(c.approved).toLowerCase() !== 'false' && c.approved !== false)
-    .map(c => ({ts:c.ts, name:maskEmails_(c.name), msg:maskEmails_(c.msg)}))
+    .map(c => {
+      const u = c.user_id && uMap[c.user_id];
+      return {ts:c.ts, name:maskEmails_(c.name), msg:maskEmails_(c.msg),
+              avatar: u?u.avatar:'', is_member: !!u, parent_ts: c.parent_ts||''};
+    })
     .sort((a,b)=> a.ts - b.ts);
 }
 function addComment_(b){
@@ -341,19 +381,22 @@ function addComment_(b){
   if (!/^[a-z0-9-]+$/i.test(slug)) return {error:'invalid slug'};
   // กัน html/script injection (ไม่ render html อยู่แล้วฝั่ง client แต่ defense-in-depth)
   if (/<script|<iframe|javascript:/i.test(name+msg)) return {error:'blocked'};
-  // rate limit ต่อ fingerprint
-  const fp = String(b.fp||'').slice(0,128);
-  if (fp){
-    const props = PropertiesService.getScriptProperties();
-    const k = 'cmt_'+sha256_(fp).slice(0,16);
-    const rec = JSON.parse(props.getProperty(k)||'{"n":0,"ts":0}');
-    if (now_() - rec.ts < 60*1000 && rec.n >= 3) return {error:'commenting too fast'};
-    rec.n = (now_()-rec.ts < 60*1000) ? rec.n+1 : 1;
-    rec.ts = now_();
-    props.setProperty(k, JSON.stringify(rec));
-  }
   const u = b.token ? sessionUser_(b.token) : null;
-  sheet_(SH.comments).appendRow([now_(), slug, name, msg, u?u.user_id:'', true]);
+  // rate limit เฉพาะ guest (member ผ่าน)
+  if (!u){
+    const fp = String(b.fp||'').slice(0,128);
+    if (fp){
+      const props = PropertiesService.getScriptProperties();
+      const k = 'cmt_'+sha256_(fp).slice(0,16);
+      const rec = JSON.parse(props.getProperty(k)||'{"n":0,"ts":0}');
+      if (now_() - rec.ts < 60*1000 && rec.n >= 3) return {error:'commenting too fast'};
+      rec.n = (now_()-rec.ts < 60*1000) ? rec.n+1 : 1;
+      rec.ts = now_();
+      props.setProperty(k, JSON.stringify(rec));
+    }
+  }
+  const parent = b.parent_ts ? Number(b.parent_ts)||'' : '';
+  sheet_(SH.comments).appendRow([now_(), slug, name, msg, u?u.user_id:'', true, parent]);
   return {ok:true};
 }
 function adminDelComment_(b){
@@ -532,6 +575,178 @@ function googleLogin_(b){
     const s = createSession_(user.user_id);
     return {ok:true, session: s.token, user: pickUser_(user)};
   } catch(e){ return {error:'google error: '+e}; }
+}
+
+/* ===== Vocab (SRS Leitner) + Quiz ===== */
+const SRS_INTERVALS = [0, 1, 3, 7, 14, 30]; // box 0=now, box 5=30 days
+function vocabSave_(b){
+  const u = sessionUser_(b.token); if (!u) return {error:'login required'};
+  const vi = String(b.vi||'').trim(), th = String(b.th||'').trim(), slug = String(b.slug||'');
+  if (!vi || !th) return {error:'invalid'};
+  const sh = sheet_(SH.vocab);
+  const all = rowsAsObjects_(sh);
+  const exists = all.find(x => x.user_id === u.user_id && x.vi === vi);
+  if (exists) return {ok:true, dup:true};
+  sh.appendRow([u.user_id, vi, th, slug, 0, now_(), now_()]);
+  return {ok:true};
+}
+function vocabDue_(b){
+  const u = sessionUser_(b.token); if (!u) return {error:'login required'};
+  const T = now_();
+  const list = rowsAsObjects_(sheet_(SH.vocab))
+    .filter(x => x.user_id === u.user_id && Number(x.due_at||0) <= T)
+    .sort((a,b) => Number(a.due_at||0) - Number(b.due_at||0))
+    .slice(0,30)
+    .map(x => ({vi:x.vi, th:x.th, slug:x.slug, box:Number(x.box)||0}));
+  return {ok:true, items:list};
+}
+function vocabReview_(b){
+  const u = sessionUser_(b.token); if (!u) return {error:'login required'};
+  const vi = String(b.vi||''); const correct = !!b.correct;
+  const sh = sheet_(SH.vocab);
+  const r = sh.getDataRange().getValues(); const h = r.shift();
+  const ui = h.indexOf('user_id'), vii = h.indexOf('vi'), bi = h.indexOf('box'), di = h.indexOf('due_at');
+  const idx = r.findIndex(x => x[ui] === u.user_id && x[vii] === vi);
+  if (idx < 0) return {error:'not found'};
+  const cur = Number(r[idx][bi])||0;
+  const next = correct ? Math.min(5, cur+1) : 0;
+  const due = now_() + SRS_INTERVALS[next]*24*60*60*1000;
+  sh.getRange(idx+2, bi+1).setValue(next);
+  sh.getRange(idx+2, di+1).setValue(due);
+  return {ok:true, box:next};
+}
+function quizSubmit_(b){
+  const u = sessionUser_(b.token); if (!u) return {error:'login required'};
+  const slug = String(b.slug||''), score = Number(b.score)||0, total = Number(b.total)||0;
+  if (!slug || !total) return {error:'invalid'};
+  sheet_(SH.quiz_log).appendRow([u.user_id, slug, score, total, now_()]);
+  return {ok:true};
+}
+function leaderboard_(b){
+  const days = Number(b.days)||30;
+  const cutoff = now_() - days*24*60*60*1000;
+  const users = rowsAsObjects_(sheet_(SH.users));
+  const uMap = {}; users.forEach(u => uMap[u.user_id] = {name:u.name||'', avatar:u.avatar||''});
+  const tally = {};
+  rowsAsObjects_(sheet_(SH.quiz_log))
+    .filter(x => Number(x.ts)||0 >= cutoff)
+    .forEach(x => {
+      tally[x.user_id] ||= {pts:0, n:0};
+      tally[x.user_id].pts += Number(x.score)||0;
+      tally[x.user_id].n += 1;
+    });
+  const top = Object.entries(tally)
+    .map(([uid,v]) => ({user_id:uid, points:v.pts, attempts:v.n, name:(uMap[uid]||{}).name||'(unknown)', avatar:(uMap[uid]||{}).avatar||''}))
+    .sort((a,b)=>b.points-a.points)
+    .slice(0,20);
+  return {ok:true, leaderboard:top, days};
+}
+
+/* ===== Admin Dashboard ===== */
+function adminStats_(b){
+  if (!guardAdmin_(b, 'stats', '')) return {error:'unauthorized'};
+  const day = 24*60*60*1000;
+  const T = now_();
+  const users = rowsAsObjects_(sheet_(SH.users));
+  const comments = rowsAsObjects_(sheet_(SH.comments));
+  const orders = rowsAsObjects_(sheet_(SH.orders));
+  const posts = rowsAsObjects_(sheet_(SH.posts));
+
+  const usersByDay = {}, signups7 = [], signups30 = [];
+  users.forEach(u => {
+    const t = Number(u.created_at)||0; if (!t) return;
+    const d = new Date(t).toISOString().slice(0,10);
+    usersByDay[d] = (usersByDay[d]||0)+1;
+    if (T-t < 7*day) signups7.push(u);
+    if (T-t < 30*day) signups30.push(u);
+  });
+
+  // top posts by comment count
+  const cmtCount = {};
+  comments.forEach(c => { cmtCount[c.slug] = (cmtCount[c.slug]||0)+1; });
+  const topPosts = Object.entries(cmtCount).sort((a,b)=>b[1]-a[1]).slice(0,10)
+    .map(([slug,n]) => {
+      const p = posts.find(x=>x.slug===slug);
+      return {slug, comments:n, title: p?(p.title_vi||p.title_th||slug):slug};
+    });
+
+  // recent activity (last 20)
+  const recent = [
+    ...users.slice(-10).map(u => ({type:'signup', ts:Number(u.created_at)||0, label:`👤 ${u.email||u.name||''} signed up via ${u.provider}`})),
+    ...comments.slice(-10).map(c => ({type:'comment', ts:Number(c.ts)||0, label:`💬 ${c.name} commented on ${c.slug}`})),
+    ...orders.slice(-10).map(o => ({type:'order', ts:Number(o.created_at)||0, label:`🛒 ${o.email} ordered ${o.item_title} (${o.status})`}))
+  ].filter(x=>x.ts).sort((a,b)=>b.ts-a.ts).slice(0,20);
+
+  // signup chart (last 14 days)
+  const chart = [];
+  for (let i=13;i>=0;i--){
+    const d = new Date(T-i*day).toISOString().slice(0,10);
+    chart.push({date:d, count: usersByDay[d]||0});
+  }
+
+  const pendingCmt = comments.filter(c => String(c.approved).toLowerCase()==='false' || c.approved===false).length;
+
+  return {ok:true, stats:{
+    users_total: users.length,
+    users_7d: signups7.length,
+    users_30d: signups30.length,
+    comments_total: comments.length,
+    comments_pending: pendingCmt,
+    orders_total: orders.length,
+    orders_pending: orders.filter(o=>o.status==='pending').length,
+    orders_paid: orders.filter(o=>o.status==='paid').length,
+    revenue_paid: orders.filter(o=>o.status==='paid').reduce((s,o)=>s+(Number(o.amount)||0),0),
+    posts_total: posts.length,
+    posts_published: posts.filter(p => p.published!==false && String(p.published).toLowerCase()!=='false').length
+  }, top_posts: topPosts, recent, chart};
+}
+
+function adminPendingComments_(b){
+  if (!guardAdmin_(b, 'list_pending', '')) return {error:'unauthorized'};
+  const list = rowsAsObjects_(sheet_(SH.comments))
+    .filter(c => String(c.approved).toLowerCase()==='false' || c.approved===false)
+    .sort((a,b)=>b.ts-a.ts)
+    .slice(0,50);
+  return {ok:true, comments: list};
+}
+
+function adminApproveComment_(b){
+  if (!guardAdmin_(b, 'approve_comment', b.ts)) return {error:'unauthorized'};
+  const sh = sheet_(SH.comments);
+  const r = sh.getDataRange().getValues(); const h = r.shift();
+  const idx = r.findIndex(x => String(x[h.indexOf('ts')]) === String(b.ts) && x[h.indexOf('slug')] === b.slug);
+  if (idx<0) return {error:'not found'};
+  sh.getRange(idx+2, h.indexOf('approved')+1).setValue(true);
+  return {ok:true};
+}
+
+/* ===== Bookmarks / Member features ===== */
+function bookmarkToggle_(b){
+  const u = sessionUser_(b.token); if (!u) return {error:'login required'};
+  const slug = String(b.slug||'').trim();
+  if (!/^[a-z0-9-]+$/i.test(slug)) return {error:'invalid slug'};
+  const sh = sheet_(SH.bookmarks);
+  const r = sh.getDataRange().getValues(); const h = r.shift();
+  const ui = h.indexOf('user_id'), si = h.indexOf('slug');
+  const idx = r.findIndex(x => x[ui] === u.user_id && x[si] === slug);
+  if (idx >= 0){ sh.deleteRow(idx+2); return {ok:true, bookmarked:false}; }
+  sh.appendRow([u.user_id, slug, now_()]);
+  return {ok:true, bookmarked:true};
+}
+function bookmarkList_(b){
+  const u = sessionUser_(b.token); if (!u) return {error:'login required'};
+  const list = rowsAsObjects_(sheet_(SH.bookmarks))
+    .filter(x => x.user_id === u.user_id)
+    .map(x => x.slug);
+  return {ok:true, slugs:list};
+}
+function myOrders_(b){
+  const u = sessionUser_(b.token); if (!u) return {error:'login required'};
+  const list = rowsAsObjects_(sheet_(SH.orders))
+    .filter(x => x.user_id === u.user_id)
+    .map(o => ({order_id:o.order_id, item_title:o.item_title, amount:o.amount, currency:o.currency, status:o.status, created_at:o.created_at, slip_url:o.slip_url}))
+    .sort((a,b) => (b.created_at||0) - (a.created_at||0));
+  return {ok:true, orders:list};
 }
 
 /* ===== Users / Sessions ===== */
