@@ -8,6 +8,7 @@
 <meta name="referrer" content="no-referrer-when-downgrade">
 <link rel="icon" href="assets/img/favicon.svg">
 <link rel="stylesheet" href="assets/css/main.css">
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
 <style>
   .login-wrap{max-width:420px;margin:60px auto;padding:0 16px}
   .login-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px;
@@ -159,18 +160,10 @@ const cfg = window.YP_CONFIG||{};
 console.log('[FB] config FB_APP_ID =', cfg.FB_APP_ID);
 if (cfg.FB_APP_ID){
   $('#fbBtn').hidden = false; $('#fbDiv').hidden = false;
-  let fbReady = false;
-  window.fbAsyncInit = () => {
+  window.fbAsyncInit = function() {
     FB.init({appId:cfg.FB_APP_ID, cookie:true, xfbml:false, version:'v19.0'});
-    fbReady = true;
-    console.log('[FB] SDK ready');
+    console.log('[FB] SDK ready, FB=', typeof FB);
   };
-  (function(d,s,i){const fjs=d.getElementsByTagName(s)[0]; if(d.getElementById(i)) return;
-    const js=d.createElement(s); js.id=i; js.async=true; js.defer=true; js.crossOrigin='anonymous';
-    js.src='https://connect.facebook.net/en_US/sdk.js';
-    js.onerror = () => { console.error('[FB] SDK load failed — ad-blocker?'); $('#msg').innerHTML='<div class="msg msg--err">โหลด Facebook SDK ไม่ได้ (ปิด ad-blocker?)</div>'; };
-    fjs.parentNode.insertBefore(js,fjs);
-  })(document,'script','fb-sdk');
   $('#fbBtn').onclick = () => {
     console.log('[FB] click, ready=', fbReady, 'FB=', typeof FB);
     if (typeof FB === 'undefined'){
