@@ -268,7 +268,7 @@ function adminGoogleLogin_(b){
   const fp = String(b.fp||'').slice(0,128);
   const idToken = String(b.id_token||'');
   if (!idToken) return {error:'no token'};
-  if (failsRecent_(fp) >= 5){ adminLog_('login_blocked', '', fp, false, 'too many fails'); return {error:'blocked, try again later'}; }
+  if (adminFails_(fp) >= 5){ adminLog_('login_blocked', '', fp, false, 'too many fails'); return {error:'blocked, try again later'}; }
   try {
     const res = UrlFetchApp.fetch('https://oauth2.googleapis.com/tokeninfo?id_token='+encodeURIComponent(idToken));
     const g = JSON.parse(res.getContentText());

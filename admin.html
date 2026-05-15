@@ -89,28 +89,56 @@
   .ad-recent__time{color:var(--ad-muted);font-size:.78rem;margin-left:6px}
   @media(max-width:700px){ .ad .row{grid-template-columns:1fr !important} }
   .ad .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+
+  /* Login screen */
+  .login-wrap{display:flex;align-items:center;justify-content:center;min-height:80vh;padding:20px}
+  .login-card{background:#fff;border-radius:20px;padding:36px 32px;max-width:420px;width:100%;
+    box-shadow:0 8px 32px rgba(45,138,78,.15);border:1px solid var(--ad-line)}
+  .login-hero{text-align:center;margin-bottom:24px}
+  .login-hero__icon{font-size:48px;line-height:1;margin-bottom:8px}
+  .login-hero h2{margin:0 0 4px;color:var(--ad-brand);font-size:1.5rem}
+  .login-hero .muted{font-size:.9em;margin:0}
+  .login-google{display:flex;justify-content:center;margin-bottom:18px;min-height:44px}
+  .login-divider{position:relative;text-align:center;margin:18px 0;color:var(--ad-muted);font-size:.82em}
+  .login-divider::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--ad-line);z-index:0}
+  .login-divider span{background:#fff;padding:0 12px;position:relative;z-index:1}
+  .login-form{display:grid;gap:10px}
+  .login-form input{padding:12px 14px;border:1.5px solid var(--ad-line);border-radius:10px;font:inherit;background:#fff;transition:border-color .15s}
+  .login-form input:focus{outline:none;border-color:var(--ad-brand);box-shadow:0 0 0 3px var(--ad-brand-soft)}
+  .login-otp{text-align:center !important;letter-spacing:8px;font-size:1.2rem;font-weight:700}
+  .login-form .btn{padding:12px;font-size:1rem;border-radius:10px;font-weight:600;margin-top:4px}
+  .login-hint{margin:6px 0 0;font-size:.82em;text-align:center}
 </style>
 </head>
 <body>
 <div class="yp-overlay" id="overlay" hidden><span class="yp-spinner"></span><span>กำลังทำงาน…</span></div>
 
 <div class="ad">
-  <h1>🌿 ygiaphan Admin</h1>
+  <h1 style="display:none">🌿 ygiaphan Admin</h1>
 
   <!-- Login form (ก่อน login) -->
-  <div class="card" id="loginBox">
-    <h3 style="margin-top:0;color:var(--ad-brand)">🔒 เข้าสู่ระบบ Admin</h3>
-    <div id="gAdminBtn" style="margin-bottom:14px;display:flex;justify-content:center"></div>
-    <p class="muted" style="text-align:center;margin:0 0 12px;font-size:.85em">— หรือ —</p>
-    <form id="loginForm" style="display:grid;gap:10px;max-width:400px">
-      <input id="key" type="password" placeholder="🔑 Admin key" required autocomplete="off">
-      <input id="otpField" type="text" placeholder="OTP 6 หลัก (จาก email)" maxlength="6"
-        inputmode="numeric" pattern="[0-9]{6}" hidden autocomplete="off"
-        style="text-align:center;letter-spacing:8px;font-size:1.2rem;font-weight:700">
-      <button class="btn" type="submit" id="loginBtn">ส่ง OTP</button>
-      <p class="muted" style="margin:0;font-size:.85em" id="loginHint">OTP จะถูกส่งไปยัง admin email (ตามที่ตั้งใน Code.gs)</p>
-    </form>
-    <span class="status" id="status"></span>
+  <div class="login-wrap" id="loginBox">
+    <div class="login-card">
+      <div class="login-hero">
+        <div class="login-hero__icon">🌿</div>
+        <h2>ygiaphan Admin</h2>
+        <p class="muted">เข้าสู่ระบบเพื่อจัดการเว็บไซต์</p>
+      </div>
+
+      <div id="gAdminBtn" class="login-google"></div>
+
+      <div class="login-divider"><span>หรือใช้ Admin key</span></div>
+
+      <form id="loginForm" class="login-form">
+        <input id="key" type="password" placeholder="🔑 Admin key" required autocomplete="off">
+        <input id="otpField" type="text" placeholder="OTP 6 หลัก" maxlength="6"
+          inputmode="numeric" pattern="[0-9]{6}" hidden autocomplete="off"
+          class="login-otp">
+        <button class="btn" type="submit" id="loginBtn">ส่ง OTP</button>
+        <p class="muted login-hint" id="loginHint">OTP จะส่งไปยัง admin email</p>
+      </form>
+      <div class="status" id="status"></div>
+    </div>
   </div>
 
   <!-- Topbar (หลัง login) -->

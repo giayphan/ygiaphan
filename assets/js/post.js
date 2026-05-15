@@ -195,20 +195,45 @@ async function renderComments(slug){
     btn.onclick = () => {
       el.querySelectorAll('.comment__reply-form').forEach(f => f.remove());
       const main = btn.closest('.comment__main');
+      const isLogin = window.YP_AUTH && window.YP_AUTH.isLogin();
+      const cap = makeCaptcha();
+      const startedAt = Date.now();
       const form = document.createElement('form');
       form.className = 'comment__reply-form';
-      form.innerHTML = `<textarea required maxlength="2000" placeholder="ตอบกลับ..."></textarea><button type="submit" class="btn btn--primary">ส่ง</button>`;
+      // member ไม่ต้อง name + captcha; guest ต้องมีทั้งคู่
+      form.innerHTML = `
+        ${isLogin ? '' : `<input name="name" placeholder="ชื่อ" required maxlength="50" style="width:100%;padding:6px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:inherit;color:inherit">`}
+        <textarea name="msg" required maxlength="2000" placeholder="ตอบกลับ..."></textarea>
+        <input name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" aria-hidden="true">
+        ${isLogin ? '' : `<label class="captcha" style="display:flex;align-items:center;gap:6px;font-size:.85em;margin-top:6px"><span>Verify: <strong>${cap.q}</strong></span><input name="answer" required inputmode="numeric" pattern="-?[0-9]+" autocomplete="off" style="width:60px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:inherit;color:inherit"></label>`}
+        <div style="display:flex;gap:6px;margin-top:6px"><button type="submit" class="btn btn--primary btn--sm">ส่ง</button><button type="button" class="btn btn--ghost btn--sm" data-cancel>ยกเลิก</button></div>
+        <p class="form-error muted" hidden style="color:#a03020"></p>`;
       main.querySelector('.comment__actions').after(form);
       form.querySelector('textarea').focus();
+      form.querySelector('[data-cancel]').onclick = () => form.remove();
       form.onsubmit = async e => {
         e.preventDefault();
-        const msg = form.querySelector('textarea').value.trim();
+        const errEl = form.querySelector('.form-error');
+        errEl.hidden = true;
+        // honeypot
+        if (form.website.value.trim() !== '') return;
+        // min 2s (bot ส่งเร็วเกิน)
+        if (Date.now() - startedAt < 2000){ errEl.hidden=false; errEl.textContent='⏱ ช้าๆ หน่อย'; return; }
+        if (!isLogin){
+          if (parseInt(form.answer.value,10) !== cap.a){ errEl.hidden=false; errEl.textContent='✗ คำตอบผิด'; return; }
+        }
+        const msg = form.msg.value.trim();
         if (!msg) return;
-        const name = (window.YP_AUTH && window.YP_AUTH.isLogin())
+        const name = isLogin
           ? ((await window.YP_AUTH.me())?.user?.name || 'Member')
-          : (prompt('ชื่อของคุณ:') || 'Guest');
-        await window.YP_API.addComment(slug, name, msg, btn.dataset.reply);
-        await renderComments(slug);
+          : form.name.value.trim().slice(0,50);
+        const sb = form.querySelector('button[type=submit]');
+        sb.disabled = true; sb.textContent = '...';
+        try {
+          const r = await window.YP_API.addComment(slug, name, msg, btn.dataset.reply);
+          if (r && r.error){ errEl.hidden=false; errEl.textContent='✗ '+r.error; sb.disabled=false; sb.textContent='ส่ง'; return; }
+          await renderComments(slug);
+        } catch(err){ errEl.hidden=false; errEl.textContent='✗ '+err.message; sb.disabled=false; sb.textContent='ส่ง'; }
       };
     };
   });

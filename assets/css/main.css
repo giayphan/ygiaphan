@@ -50,37 +50,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&display=swap');
 html[lang="th"]{ --font: var(--font-th); }
 html[lang="vi"]{ --font: var(--font-vi); }
-html[data-theme="dark"]{
-  --bg:#0f1411; --fg:#f1f5f1; --muted:#b5c4ba; --line:#2f3d35;
-  --brand:#a8e6c1; --brand-bg:#1d2a23; --accent:#c4f0d3; --accent-bg:#1d2a23;
-  --green:#a8e6c1; --green-soft:#1d2a23; --green-deep:#a8e6c1; --green-mid:#7fc99c;
-  --pink:#a8e6c1; --pink-soft:#1d2a23; --pink-deep:#a8e6c1;
-  --cream:#1a2620; --yellow:#ffe49c;
-  --shadow:0 4px 16px rgba(0,0,0,.5);
-}
-html[data-theme="dark"] body{background:var(--bg);color:var(--fg)}
-html[data-theme="dark"] .card,
-html[data-theme="dark"] .me-card,
-html[data-theme="dark"] .me-hero,
-html[data-theme="dark"] .donate__item,
-html[data-theme="dark"] .login-card,
-html[data-theme="dark"] .dd__card,
-html[data-theme="dark"] .post,
-html[data-theme="dark"] .search-box,
-html[data-theme="dark"] input,
-html[data-theme="dark"] textarea,
-html[data-theme="dark"] select{background:#1a2620;color:var(--fg);border-color:var(--line)}
-html[data-theme="dark"] .site-header,
-html[data-theme="dark"] .site-footer{background:#141b17;border-color:var(--line)}
-html[data-theme="dark"] h1,html[data-theme="dark"] h2,html[data-theme="dark"] h3,
-html[data-theme="dark"] h4,html[data-theme="dark"] strong,html[data-theme="dark"] .brand__name{color:#fff}
-html[data-theme="dark"] a{color:var(--brand)}
-html[data-theme="dark"] code,html[data-theme="dark"] pre{background:#243029;color:#ffe49c}
-html[data-theme="dark"] .muted{color:var(--muted)}
-html[data-theme="dark"] .pill--pending{background:#3a2f0e;color:#ffe49c}
-html[data-theme="dark"] .pill--paid{background:#1d3a25;color:#a8e6c1}
-html[data-theme="dark"] .btn--ghost{color:var(--fg);border-color:var(--line)}
-html[data-theme="dark"] .btn--ghost:hover{background:var(--brand-bg)}
 /* Always render Vietnamese inline text in serif, even on Thai pages */
 .vn, [lang="vi"]{ font-family: var(--font-vi); }
 .th, [lang="th"]{ font-family: var(--font-th); }
@@ -269,7 +238,6 @@ a:hover{color:var(--brand);text-decoration:none}
 .search-modal{position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:60px 16px;box-sizing:border-box;animation:yp-fadein .15s;backdrop-filter:blur(2px)}
 .search-modal[hidden]{display:none !important}
 .search-box{background:#fff;border-radius:16px;width:100%;max-width:560px;padding:18px;box-shadow:var(--shadow);position:relative}
-html[data-theme="dark"] .search-box{background:#222a25}
 .search-box input{width:100%;padding:14px 44px 14px 16px;border:2px solid var(--line);border-radius:12px;font:inherit;font-size:1.05rem;background:inherit;color:inherit;box-sizing:border-box}
 .search-box input:focus{outline:none;border-color:var(--brand)}
 .search-close{position:absolute;top:18px;right:18px;background:none;border:0;font-size:20px;cursor:pointer;color:var(--muted);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1;pointer-events:auto}
@@ -294,7 +262,6 @@ html[data-theme="dark"] .search-box{background:#222a25}
 .vocab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:10px}
 .vocab-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;position:relative;transition:transform .15s,box-shadow .15s}
 .vocab-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(45,138,78,.15)}
-html[data-theme="dark"] .vocab-card{background:#1a2620}
 .vocab-card__vi{font-weight:700;font-size:1.1rem;color:var(--brand)}
 .vocab-card__th{color:var(--muted);margin-top:4px;font-size:.95rem}
 .vocab-card__save{margin-top:8px;background:none;border:1px solid var(--brand);color:var(--brand);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:600}
@@ -303,25 +270,19 @@ html[data-theme="dark"] .vocab-card{background:#1a2620}
 
 /* Quiz block */
 .quiz-block{background:#fffaeb;border:2px solid #ffe49c;border-radius:16px;padding:20px;margin:24px 0}
-html[data-theme="dark"] .quiz-block{background:#2a2410;border-color:#5a4a1a}
 .quiz-block h3{margin:0 0 16px;color:#c47700}
-html[data-theme="dark"] .quiz-block h3{color:#ffd770}
 .quiz-form{display:grid;gap:14px}
 .quiz-q{background:#fff;border-radius:10px;padding:14px}
-html[data-theme="dark"] .quiz-q{background:#1a2620}
 .quiz-q__text{margin:0 0 10px;font-weight:500}
 .quiz-opt{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--line);margin-bottom:6px;transition:all .15s}
 .quiz-opt:hover{background:var(--brand-bg);border-color:var(--brand)}
 .quiz-opt input{accent-color:var(--brand)}
 .quiz-opt.is-right{background:#d4edda;border-color:#28a745;color:#155724}
 .quiz-opt.is-wrong{background:#f8d7da;border-color:#dc3545;color:#721c24}
-html[data-theme="dark"] .quiz-opt.is-right{background:#1d3a25;color:#a8e6c1}
-html[data-theme="dark"] .quiz-opt.is-wrong{background:#3a1d1d;color:#e6a8a8}
 .quiz-result{padding:14px;background:var(--brand-bg);border-radius:10px;text-align:center;font-size:1.2rem}
 
 /* Flashcard reviewer (me.html) */
 .flashcard{background:linear-gradient(135deg,#fff,var(--brand-bg));border:2px solid var(--brand);border-radius:20px;padding:40px 20px;text-align:center;box-shadow:var(--shadow);min-height:200px;display:flex;flex-direction:column;justify-content:center;cursor:pointer;user-select:none;transition:transform .15s}
-html[data-theme="dark"] .flashcard{background:linear-gradient(135deg,#1a2620,#243029)}
 .flashcard:hover{transform:scale(1.02)}
 .flashcard__front{font-size:2rem;font-weight:700;color:var(--brand)}
 .flashcard__back{font-size:1.5rem;color:var(--fg);margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
@@ -441,3 +402,4 @@ body.is-offline::before{content:"📵 ออฟไลน์ — บางคุ�
   .page,.post{padding:22px 20px;margin:16px auto}
   .section__head h2{font-size:20px}
 }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               

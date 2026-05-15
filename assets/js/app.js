@@ -160,7 +160,6 @@ window.YP_setOG = function(opts){
           return `<a class="nav__link" href="${item.url}">${label}</a>`;
         }).join('')}
         <button class="search-btn" title="Search" id="searchBtn">🔍</button>
-        <button class="theme-btn" title="Toggle dark mode" id="themeBtn">🌙</button>
         <button class="lang-switch" title="Change language">🌐 ${T.switch_lang||'TH'}</button>
         <a class="nav__link nav__login" href="login.html" id="navAuth">👤</a>
       </nav>
@@ -246,19 +245,6 @@ window.YP_setOG = function(opts){
       : `<p class="muted" style="padding:20px;text-align:center">${(window.YP_T||{}).search_empty||'ไม่พบ'}</p>`;
   });
 
-  // ----- Dark mode -----
-  const TH_KEY = 'yp:theme';
-  const themeBtn = document.getElementById('themeBtn');
-  function applyTheme(t){
-    document.documentElement.dataset.theme = t;
-    if (themeBtn) themeBtn.textContent = t==='dark' ? '☀️' : '🌙';
-  }
-  applyTheme(localStorage.getItem(TH_KEY) || 'light');
-  themeBtn?.addEventListener('click', () => {
-    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem(TH_KEY, next);
-    applyTheme(next);
-  });
 
   // Auth indicator: ถ้า login แล้ว → แสดง avatar + link ไป me.html
   (async () => {
