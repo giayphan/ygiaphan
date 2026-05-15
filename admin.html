@@ -378,7 +378,7 @@ function startExpTimer(){
     const m = Math.floor(sec/60), s = sec%60;
     $('#expTimer').textContent = sec ? `⏱ ${m}:${String(s).padStart(2,'0')}` : '';
     if (sec <= 0){
-      sessionStorage.removeItem(TOKEN_LS);
+      sessionStorage.removeItem(TOKEN_LS); localStorage.removeItem('yp:isAdmin');
       showLogin('Session หมดอายุ — กรุณา login ใหม่');
     }
   }, 1000);
@@ -399,7 +399,7 @@ function startExpTimer(){
           const r = await post({action:'admin_google', id_token: resp.credential});
           if (r.error){ setStatus('✗ ' + r.error + ' (ใช้เฉพาะ admin email)'); return; }
           if (r.ok && r.admin_token){
-            sessionStorage.setItem(TOKEN_LS, r.admin_token);
+            sessionStorage.setItem(TOKEN_LS, r.admin_token); localStorage.setItem('yp:isAdmin','1');
             tokenExpAt = Date.now() + r.expires_in*1000;
             showAdmin();
           }
@@ -429,7 +429,7 @@ $('#loginForm').addEventListener('submit', async e => {
         return;
       }
       if (r.ok && r.admin_token){
-        sessionStorage.setItem(TOKEN_LS, r.admin_token);
+        sessionStorage.setItem(TOKEN_LS, r.admin_token); localStorage.setItem('yp:isAdmin','1');
         tokenExpAt = Date.now() + r.expires_in*1000;
         showAdmin();
       }
@@ -437,7 +437,7 @@ $('#loginForm').addEventListener('submit', async e => {
       r = await post({action:'admin_login_otp', key: keyVal(), otp: $('#otpField').value.trim()});
       if (r.error){ setStatus('✗ ' + r.error); return; }
       if (r.ok && r.admin_token){
-        sessionStorage.setItem(TOKEN_LS, r.admin_token);
+        sessionStorage.setItem(TOKEN_LS, r.admin_token); localStorage.setItem('yp:isAdmin','1');
         tokenExpAt = Date.now() + r.expires_in*1000;
         showAdmin();
       }
@@ -447,7 +447,7 @@ $('#loginForm').addEventListener('submit', async e => {
 
 $('#logout').onclick = async () => {
   await post({action:'admin_logout'}).catch(()=>{});
-  sessionStorage.removeItem(TOKEN_LS);
+  sessionStorage.removeItem(TOKEN_LS); localStorage.removeItem('yp:isAdmin');
   showLogin('ออกแล้ว');
 };
 
@@ -460,7 +460,7 @@ let idleTimer;
 const resetIdle = () => {
   clearTimeout(idleTimer);
   idleTimer = setTimeout(() => {
-    sessionStorage.removeItem(TOKEN_LS);
+    sessionStorage.removeItem(TOKEN_LS); localStorage.removeItem('yp:isAdmin');
     showLogin('Idle เกินกำหนด — กรุณา login ใหม่');
   }, 15*60*1000);
 };
@@ -483,7 +483,7 @@ async function loadAll(){
     DATA = await post({action:'admin_listall'});
     if (DATA.error){
       if (DATA.error === 'unauthorized' || /lock|session/i.test(DATA.error)){
-        sessionStorage.removeItem(TOKEN_LS);
+        sessionStorage.removeItem(TOKEN_LS); localStorage.removeItem('yp:isAdmin');
         showLogin('Session หมดอายุ — login ใหม่');
         return;
       }
@@ -669,7 +669,7 @@ async function init(){
     tokenExpAt = Date.now() + 60*60*1000; // approximate, server จะคืน expires_in ตอน login เท่านั้น
     showAdmin();
   } else {
-    sessionStorage.removeItem(TOKEN_LS);
+    sessionStorage.removeItem(TOKEN_LS); localStorage.removeItem('yp:isAdmin');
     showLogin();
   }
 }

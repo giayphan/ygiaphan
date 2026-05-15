@@ -83,6 +83,7 @@ function doGet_inner_(e){
   if (a === 'comments') return json_(listComments_(e.parameter.slug||''));
   if (a === 'courses')  return json_(listCourses_());
   if (a === 'me')       return json_(getMe_(e.parameter.token));
+  if (a === 'thanks_list') return json_(thanksList_());
   return json_({error:'unknown action'});
 }
 function b64decode_(s){
@@ -119,6 +120,7 @@ function doPostBody_(b){
     if (a === 'vocab_due')       return json_(vocabDue_(b));
     if (a === 'quiz_submit')     return json_(quizSubmit_(b));
     if (a === 'leaderboard')     return json_(leaderboard_(b));
+    if (a === 'thanks_list')     return json_(thanksList_());
     if (a === 'logout')        return json_(logout_(b));
     if (a === 'order_create')  return json_(orderCreate_(b));
     if (a === 'order_slip')    return json_(orderSubmitSlip_(b));
@@ -640,6 +642,16 @@ function leaderboard_(b){
     .sort((a,b)=>b.points-a.points)
     .slice(0,20);
   return {ok:true, leaderboard:top, days};
+}
+
+/* ===== Thanks (public donor list) ===== */
+function thanksList_(){
+  const rows = rowsAsObjects_(sheet_(SH.donations))
+    .filter(d => d.name && String(d.name).trim() !== '')
+    .map(d => ({name:String(d.name).trim(), amount:Number(d.amount)||0, ts:Number(d.ts)||0}))
+    .sort((a,b) => b.amount - a.amount || b.ts - a.ts)
+    .slice(0,50);
+  return {ok:true, list: rows};
 }
 
 /* ===== Admin Dashboard ===== */

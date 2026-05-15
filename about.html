@@ -21,6 +21,7 @@
       <h2>💚 สนับสนุนเรา / Ủng hộ chúng tôi</h2>
       <p class="muted">ถ้าเนื้อหาช่วยคุณได้ ก็ช่วยเลี้ยงกาแฟเราหน่อยน้าาา 🍵</p>
       <div class="donate__grid" id="donateGrid"></div>
+      <div class="donate__thanks" id="donateThanks"></div>
       <details class="donate__log">
         <summary>แจ้งการโอน (เพื่อ tag ขอบคุณบนเว็บ)</summary>
         <form id="donateForm">
@@ -51,6 +52,9 @@
   .donate__item a{display:inline-block;background:var(--brand);color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px}
   .donate__item a:hover{background:#236d3e}
   .donate__log{margin-top:16px}
+  .thanks-list{display:flex;flex-wrap:wrap;gap:6px}
+  .thanks-tag{background:#fff;border:1px solid var(--brand);color:var(--brand);padding:4px 12px;border-radius:99px;font-size:.85em;font-weight:600;cursor:default}
+  .thanks-tag:hover{background:var(--brand);color:#fff}
   .donate__log summary{cursor:pointer;font-weight:600;color:var(--brand)}
   .donate__log form{display:grid;gap:8px;margin-top:12px}
   .donate__log input,.donate__log textarea,.donate__log select{
@@ -85,6 +89,19 @@ if (D.paypal) items.push(`<div class="donate__item">
   <a href="${D.paypal}" target="_blank" rel="noopener">เปิด PayPal →</a>
 </div>`);
 document.getElementById('donateGrid').innerHTML = items.join('') || '<p class="muted">ยังไม่ได้ตั้งค่า donate</p>';
+
+// load thanks list
+(async () => {
+  try {
+    const r = await window.YP_API.thanksList();
+    if (r.ok && r.list && r.list.length){
+      document.getElementById('donateThanks').innerHTML = `
+        <h3 style="margin:20px 0 8px;color:var(--brand);font-size:1rem">💚 ขอบคุณผู้สนับสนุน</h3>
+        <div class="thanks-list">${r.list.map(d => `
+          <span class="thanks-tag" title="${d.amount} THB">${d.name}</span>`).join('')}</div>`;
+    }
+  } catch(_){}
+})();
 
 // donate log form
 document.getElementById('donateForm').addEventListener('submit', async e => {

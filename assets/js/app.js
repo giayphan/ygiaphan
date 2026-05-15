@@ -54,7 +54,7 @@ if (!navigator.onLine) document.body.classList.add('is-offline');
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredPrompt = e;
-    if (sessionStorage.getItem('yp:install-dismissed')) return;
+    if (localStorage.getItem('yp:install-dismissed')) return;
     showInstall();
   });
   function showInstall(){
@@ -73,9 +73,11 @@ if (!navigator.onLine) document.body.classList.add('is-offline');
       t.remove();
     };
     t.querySelector('#ypInstallX').onclick = () => {
-      sessionStorage.setItem('yp:install-dismissed', '1');
+      localStorage.setItem('yp:install-dismissed', Date.now());
       t.remove();
     };
+    // auto-hide หลัง 30 วิ (ไม่ flag dismissed → กลับมาขึ้นใหม่ได้)
+    setTimeout(() => t.remove(), 30000);
   }
 })();
 
@@ -247,6 +249,19 @@ window.YP_setOG = function(opts){
 
 
   // Auth indicator: ถ้า login แล้ว → แสดง avatar + link ไป me.html
+  // Admin shortcut — ถ้า admin token อยู่ใน sessionStorage → เพิ่มปุ่ม Admin ใน nav
+  (function showAdminLink(){
+    if (!localStorage.getItem('yp:isAdmin')) return;
+    // ถ้า admin token ไม่มีในแท็บนี้แล้ว แต่ flag ค้าง → ยอมโชว์ปุ่ม
+    // กดแล้ว admin.html จะ redirect ไป login เอง (verify ฝั่ง server)
+    const navEl = document.querySelector('.nav');
+    if (!navEl || document.getElementById('navAdmin')) return;
+    const a = document.createElement('a');
+    a.id = 'navAdmin'; a.href = 'admin.html'; a.className = 'nav__link nav__admin';
+    a.title = 'Admin'; a.textContent = '🛡 Admin';
+    navEl.insertBefore(a, navEl.querySelector('.search-btn') || navEl.lastElementChild);
+  })();
+
   (async () => {
     const navAuth = document.getElementById('navAuth');
     if (!navAuth || !window.YP_AUTH || !window.YP_AUTH.isLogin()) return;

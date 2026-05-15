@@ -222,6 +222,8 @@ a:hover{color:var(--brand);text-decoration:none}
 .like.is-on::before{animation:pop .3s}
 .bookmark{cursor:pointer;background:none;border:0;color:inherit;font:inherit;padding:0;display:inline-flex;align-items:center;gap:2px}
 .bookmark.is-on{color:var(--brand)}
+.nav__admin{background:#fff3cd !important;color:#856404 !important;font-weight:700;border:1px solid #ffe49c}
+.nav__admin:hover{background:#ffe49c !important;color:#856404 !important}
 .nav__login{display:inline-flex;align-items:center;gap:8px;padding:3px 12px 3px 3px !important;background:var(--brand-bg) !important;border-radius:99px}
 .nav__login:hover{background:var(--green-soft) !important}
 .nav__avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #fff;box-shadow:0 1px 4px rgba(45,138,78,.2);flex-shrink:0;display:inline-block;vertical-align:middle}
