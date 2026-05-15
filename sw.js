@@ -1,5 +1,5 @@
 // ygiaphan service worker — bump version to invalidate cache
-const VERSION = 'yp-v4';
+const VERSION = 'yp-v5';
 const STATIC = [
   './',
   './index.html',
@@ -49,6 +49,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
+  // Skip non-http (chrome-extension://, data:, etc.)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
   // Skip Google APIs / external (no caching)
   if (url.hostname.includes('google.com') || url.hostname.includes('gstatic.com') || url.hostname.includes('facebook')) return;
   // HTML

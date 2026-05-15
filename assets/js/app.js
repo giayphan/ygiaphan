@@ -248,12 +248,13 @@ window.YP_setOG = function(opts){
   });
 
 
-  // Auth indicator: ถ้า login แล้ว → แสดง avatar + link ไป me.html
-  // Admin shortcut — ถ้า admin token อยู่ใน sessionStorage → เพิ่มปุ่ม Admin ใน nav
+  // Admin shortcut — ตรวจ flag หรือ session token (รองรับ user เก่า)
   (function showAdminLink(){
+    // ถ้ามี admin token ใน sessionStorage แต่ไม่มี flag → set ให้
+    if (sessionStorage.getItem('yp:adminToken') && !localStorage.getItem('yp:isAdmin')){
+      localStorage.setItem('yp:isAdmin','1');
+    }
     if (!localStorage.getItem('yp:isAdmin')) return;
-    // ถ้า admin token ไม่มีในแท็บนี้แล้ว แต่ flag ค้าง → ยอมโชว์ปุ่ม
-    // กดแล้ว admin.html จะ redirect ไป login เอง (verify ฝั่ง server)
     const navEl = document.querySelector('.nav');
     if (!navEl || document.getElementById('navAdmin')) return;
     const a = document.createElement('a');
@@ -277,8 +278,31 @@ window.YP_setOG = function(opts){
           ? `<img class="nav__avatar" src="${u.avatar}" alt="" referrerpolicy="no-referrer">`
           : `<span class="nav__avatar nav__avatar--ph">${initials}</span>`;
         navAuth.innerHTML = `${av}<span class="nav__avatar-name">${name}</span>`;
+        // เปลี่ยนเป็น dropdown menu
+        navAuth.removeAttribute('href');
+        navAuth.style.cursor = 'pointer';
+        const menu = document.createElement('div');
+        menu.className = 'me-menu';
+        menu.hidden = true;
+        menu.innerHTML = `
+          <a href="me.html#vocab"><span>🎴</span> ทบทวนศัพท์</a>
+          <a href="me.html#bookmarks"><span>⭐</span> Bookmarks</a>
+          <a href="me.html#orders"><span>🛒</span> คำสั่งซื้อ</a>
+          <a href="me.html#leaderboard"><span>🏆</span> อันดับ</a>
+          <hr>
+          <a href="me.html"><span>👤</span> โปรไฟล์เต็ม</a>
+          <a href="javascript:void(0)" id="navLogout"><span>🚪</span> ออกจากระบบ</a>`;
+        navAuth.parentElement.style.position='relative';
+        navAuth.after(menu);
+        navAuth.onclick = e => { e.preventDefault(); menu.hidden = !menu.hidden; };
+        document.addEventListener('click', e => {
+          if (!menu.contains(e.target) && e.target !== navAuth && !navAuth.contains(e.target)) menu.hidden = true;
+        });
+        menu.querySelector('#navLogout').onclick = async () => {
+          await window.YP_AUTH.logout();
+          location.reload();
+        };
       } else {
-        // session หาย → กลับเป็น guest
         navAuth.innerHTML = `<span class="nav__avatar nav__avatar--ph">👤</span>`;
         navAuth.href = 'login.html';
       }

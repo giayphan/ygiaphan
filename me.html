@@ -85,10 +85,15 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
   $('#content').hidden = false;
 
   // Tabs
-  document.querySelectorAll('.me-tab').forEach(t => t.onclick = () => {
-    document.querySelectorAll('.me-tab').forEach(x => x.classList.toggle('active', x===t));
-    document.querySelectorAll('.tab-pane').forEach(p => p.hidden = (p.id !== 'tab-'+t.dataset.tab));
-  });
+  function switchTab(name){
+    document.querySelectorAll('.me-tab').forEach(x => x.classList.toggle('active', x.dataset.tab===name));
+    document.querySelectorAll('.tab-pane').forEach(p => p.hidden = (p.id !== 'tab-'+name));
+    history.replaceState(null,'','#'+name);
+  }
+  document.querySelectorAll('.me-tab').forEach(t => t.onclick = () => switchTab(t.dataset.tab));
+  // เปิดตาม hash ใน URL (#vocab, #bookmarks, ...)
+  const initial = (location.hash||'#vocab').slice(1);
+  if (['vocab','bookmarks','orders','leaderboard'].includes(initial)) switchTab(initial);
 
   // Bookmarks
   const bm = await window.YP_API.bookmarkList();

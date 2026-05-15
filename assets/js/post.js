@@ -77,14 +77,14 @@
     <section class="comments">
       <h2>${T.comments||'Comments'}</h2>
       <form class="comment-form" data-form>
-        <input type="text" name="name" placeholder="${T.comment_name||'Your name'}" required maxlength="50">
+        ${(window.YP_AUTH && window.YP_AUTH.isLogin()) ? '' : `<input type="text" name="name" placeholder="${T.comment_name||'Your name'}" required maxlength="50">`}
         <textarea name="msg" placeholder="${T.comment_msg||'Comment…'}" required rows="3" maxlength="2000"></textarea>
         <!-- honeypot field (hidden) — bots fill it, humans don't -->
         <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" aria-hidden="true">
-        <label class="captcha">
+        ${(window.YP_AUTH && window.YP_AUTH.isLogin()) ? '' : `<label class="captcha">
           <span>${T.captcha_q||'Verify:'} <strong>${captcha.q}</strong></span>
           <input type="text" name="answer" required inputmode="numeric" pattern="-?[0-9]+" autocomplete="off" style="width:80px">
-        </label>
+        </label>`}
         <button type="submit" class="btn btn--primary">${T.comment_send||'Send'}</button>
         <p class="form-error" data-err hidden></p>
       </form>
@@ -123,11 +123,14 @@
     const errEl = f.querySelector('[data-err]');
     errEl.hidden = true;
 
+    const isLogin = window.YP_AUTH && window.YP_AUTH.isLogin();
     if (f.website.value.trim() !== '') return;
     if (Date.now() - startedAt < 2000) { showErr(errEl, '⏱'); return; }
-    if (parseInt(f.answer.value,10) !== captcha.a){ showErr(errEl, T.captcha_wrong||'Wrong'); return; }
+    if (!isLogin && parseInt(f.answer.value,10) !== captcha.a){ showErr(errEl, T.captcha_wrong||'Wrong'); return; }
 
-    const name = f.name.value.trim().slice(0,50);
+    const name = isLogin
+      ? ((await window.YP_AUTH.me())?.user?.name || 'Member')
+      : f.name.value.trim().slice(0,50);
     const msg  = f.msg.value.trim().slice(0,2000);
     const btn  = f.querySelector('button[type=submit]');
     const orig = btn.innerHTML;
@@ -143,9 +146,12 @@
       await renderComments(slug);
     } catch(_){ showErr(errEl, 'Network'); }
     finally { btn.disabled = false; btn.innerHTML = orig; }
-    const c2 = makeCaptcha();
-    f.querySelector('.captcha strong').textContent = c2.q;
-    captcha.q = c2.q; captcha.a = c2.a;
+    if (!isLogin){
+      const c2 = makeCaptcha();
+      const capEl = f.querySelector('.captcha strong');
+      if (capEl) capEl.textContent = c2.q;
+      captcha.q = c2.q; captcha.a = c2.a;
+    }
   });
 })();
 
