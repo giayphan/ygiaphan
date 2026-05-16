@@ -477,6 +477,17 @@ body.is-offline::before{content:"📵 ออฟไลน์ — บางคุ�
   .section__head h2{font-size:20px}
 }
 
+/* ===== Donate mini widget (index) ===== */
+.donate-mini{margin:24px 0;padding:20px;background:var(--brand-bg);border-radius:16px;text-align:center;border:2px dashed var(--green-soft)}
+.donate-mini h3{margin:0 0 4px;color:var(--brand);font-size:1.1rem}
+.donate-mini p{margin:0 0 12px}
+.donate-mini__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:12px}
+.donate-mini__item{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:.9em}
+.donate-mini__item img{max-width:120px;height:auto;border-radius:6px;margin:6px 0;display:block;margin-left:auto;margin-right:auto}
+.donate-mini__item strong{display:block;color:var(--brand);margin-bottom:4px;font-size:.95em}
+.donate-mini__item code{background:var(--green-soft);padding:2px 8px;border-radius:6px;font-size:.85em;user-select:all;display:inline-block;margin-top:4px}
+.donate-mini__item a{display:inline-block;background:var(--brand);color:#fff;padding:6px 14px;border-radius:8px;font-weight:600;margin-top:6px;font-size:.85em}
+
 /* ===== Thanks / Supporters ===== */
 .thanks-list{display:flex;flex-wrap:wrap;gap:6px}
 .thanks-tag{background:#fff;border:1px solid var(--brand);color:var(--brand);padding:4px 12px;border-radius:99px;font-size:.85em;font-weight:600;cursor:default}

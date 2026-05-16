@@ -28,6 +28,13 @@
     <div class="grid grid--3" data-courses></div>
   </section>
 
+  <aside class="donate-mini" id="donateMini" hidden>
+    <h3>💚 สนับสนุนเรา</h3>
+    <p class="muted">ถ้าเนื้อหาช่วยคุณ ช่วยเลี้ยงกาแฟเราหน่อย 🍵</p>
+    <div id="donateMiniGrid" class="donate-mini__grid"></div>
+    <a class="btn btn--primary" href="about.html#donate">ดูช่องทางทั้งหมด →</a>
+  </aside>
+
   <section id="supporters-section" class="section" style="display:none">
     <div id="supporters-wrap"></div>
   </section>
@@ -66,6 +73,16 @@
 <script src="assets/js/card.js"></script>
 <script src="assets/js/home.js"></script>
 <script>
+// donate mini widget
+(function(){
+  const D = (window.YP_CONFIG||{}).DONATE||{};
+  const items = [];
+  if (D.promptpay) items.push(`<div class="donate-mini__item"><strong>PromptPay 🇹🇭</strong>${D.promptpay_qr?`<img src="${D.promptpay_qr}" alt="QR">`:''}<code>${D.promptpay}</code></div>`);
+  if (D.paypal)    items.push(`<div class="donate-mini__item"><strong>PayPal 🌐</strong><a href="${D.paypal}" target="_blank" rel="noopener">บริจาค</a></div>`);
+  if (!items.length) return;
+  document.getElementById('donateMiniGrid').innerHTML = items.join('');
+  document.getElementById('donateMini').hidden = false;
+})();
 (async function(){
   if (!window.YP_CONFIG || !window.YP_CONFIG.USE_API) return;
   const wrap = document.getElementById('supporters-wrap');
