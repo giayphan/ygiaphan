@@ -26,6 +26,7 @@ const SH = {
   sessions:'sessions', orders:'orders', donations:'donations',
   magic:'magic_tokens', courses:'courses', bookmarks:'bookmarks',
   vocab:'user_vocab', quiz_log:'quiz_log',
+  dictionary:'dictionary',
   admin_sessions:'admin_sessions', admin_log:'admin_log', admin_fails:'admin_fails'
 };
 

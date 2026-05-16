@@ -32,6 +32,7 @@ function setup(){
   ensureSheet_(ss, SH.bookmarks, ['user_id','slug','created_at']);
   ensureSheet_(ss, SH.vocab, ['user_id','vi','th','slug','box','due_at','created_at']);
   ensureSheet_(ss, SH.quiz_log, ['user_id','slug','score','total','ts']);
+  ensureSheet_(ss, SH.dictionary, ['id','vi','th','pv','pt','cat','ex_vi','ex_th']);
   ensureSheet_(ss, SH.admin_sessions, ['token','fingerprint','created_at','expires_at','last_seen']);
   ensureSheet_(ss, SH.admin_log, ['ts','action','target','fingerprint','ok','detail']);
   ensureSheet_(ss, SH.admin_fails, ['ts','fingerprint','reason']);
@@ -56,7 +57,19 @@ function doGet_inner_(e){
   if (a === 'courses')    return json_(listCourses_());
   if (a === 'me')         return json_(getMe_(e.parameter.token));
   if (a === 'thanks_list') return json_(thanksList_());
+  if (a === 'dict')       return json_(listDict_());
   return json_({error:'unknown action'});
+}
+
+function listDict_(){
+  const sh = ss_().getSheetByName(SH.dictionary);
+  if (!sh) return [];
+  return rowsAsObjects_(sh).filter(w => w.id && (w.vi || w.th));
+}
+
+function setupDictionary(){
+  ensureSheet_(SpreadsheetApp.openById(SHEET_ID), SH.dictionary, ['id','vi','th','pv','pt','cat','ex_vi','ex_th']);
+  return 'ok';
 }
 
 function doPost(e){
