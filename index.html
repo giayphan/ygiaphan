@@ -66,23 +66,24 @@
 <script src="assets/js/card.js"></script>
 <script src="assets/js/home.js"></script>
 <script>
-(function(){
+(async function(){
   if (!window.YP_CONFIG || !window.YP_CONFIG.USE_API) return;
-  document.addEventListener('DOMContentLoaded', async function(){
-    try {
-      const r = await window.YP_API.thanksList();
-      if (!r || !r.ok || !r.list || !r.list.length) return;
-      const wrap = document.getElementById('supporters-wrap');
-      const sec  = document.getElementById('supporters-section');
-      if (!wrap || !sec) return;
-      wrap.innerHTML =
-        `<h3 style="margin:0 0 8px;color:var(--brand);font-size:1rem">💚 ขอบคุณผู้สนับสนุน</h3>
-         <div class="thanks-list">${r.list.map(d =>
-           `<span class="thanks-tag" title="${(+d.amount).toLocaleString()} THB">${d.name}</span>`
-         ).join('')}</div>`;
-      sec.style.display = '';
-    } catch(e){}
-  });
+  const wrap = document.getElementById('supporters-wrap');
+  const sec  = document.getElementById('supporters-section');
+  if (!wrap || !sec) return;
+  try {
+    const r = await window.YP_API.thanksList();
+    console.log('[supporters]', r);
+    if (!r || !r.ok) return;
+    const list = r.list || [];
+    if (!list.length) return;
+    wrap.innerHTML =
+      `<h3 style="margin:0 0 8px;color:var(--brand);font-size:1rem">💚 ขอบคุณผู้สนับสนุน</h3>
+       <div class="thanks-list">${list.map(d =>
+         `<span class="thanks-tag" title="${(+d.amount).toLocaleString()} THB">${d.name}</span>`
+       ).join('')}</div>`;
+    sec.style.display = '';
+  } catch(e){ console.warn('[supporters] failed', e); }
 })();
 </script>
 </body>
