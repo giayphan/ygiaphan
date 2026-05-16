@@ -179,8 +179,8 @@ a:hover{color:var(--brand);text-decoration:none}
 
 /* Filters */
 .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
-.filters a{padding:6px 16px;border-radius:var(--radius-pill);font-size:13px;font-weight:500;color:var(--muted);background:#fff;border:2px solid transparent;transition:all .15s}
-.filters a.is-active{background:linear-gradient(135deg,var(--pink) 0%,var(--pink-deep) 100%);color:#fff;border-color:transparent}
+.filters a{padding:6px 16px;border-radius:var(--radius-pill);font-size:13px;font-weight:500;color:var(--muted);background:#fff;border:2px solid transparent;transition:color .15s,border-color .15s}
+.filters a.is-active{background:var(--pink-deep);color:#fff;border-color:transparent}
 .filters a:hover{text-decoration:none;color:var(--pink-deep);border-color:var(--pink-soft)}
 .filters a.is-active:hover{color:#fff}
 
