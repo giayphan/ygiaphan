@@ -1,7 +1,7 @@
 // ygiaphan — แก้ค่าเดียวจบ
 window.YP_CONFIG = {
   // URL ของ Apps Script Web App (ลงท้ายด้วย /exec)
-  API_URL: "https://script.google.com/macros/s/AKfycbxz-2eilxmG2I7v-Yjqhx9-Dp8ZtmKoWh6mOnK-7I8ZIef8wZAyNv3aVv0jZ3SquUYB/exec",
+  API_URL: "https://script.google.com/macros/s/AKfycbygIlR4S4sQhJUAOSo0yPR_omIHnZbvkJqmhqGyaLdOqZ9y5kjT9CzgdX3NP_uSCIc/exec",
   // ถ้า API_URL ว่าง → ใช้ posts จาก content/posts/*.js (โหมด static เดิม)
   USE_API: true,
   // Google Sign-In (เว้นว่าง = ปิด)
