@@ -1,0 +1,13 @@
+{
+  "name": "ygiaphan",
+  "private": true,
+  "scripts": {
+    "serve": "npx --yes http-server -p 8080 -c-1 -s",
+    "test:mobile": "playwright test --config=tests/e2e/playwright.config.js",
+    "test:mobile:headed": "playwright test --config=tests/e2e/playwright.config.js --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "http-server": "^14.1.1"
+  }
+}

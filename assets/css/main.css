@@ -476,8 +476,51 @@ body.is-offline::before{content:"📵 ออฟไลน์ — บางคุ�
   .page,.post{padding:22px 20px;margin:16px auto}
   .section__head h2{font-size:20px}
 }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+
 /* ===== Thanks / Supporters ===== */
 .thanks-list{display:flex;flex-wrap:wrap;gap:6px}
 .thanks-tag{background:#fff;border:1px solid var(--brand);color:var(--brand);padding:4px 12px;border-radius:99px;font-size:.85em;font-weight:600;cursor:default}
 .thanks-tag:hover{background:var(--brand);color:#fff}
+
+/* ===== Mobile UX hardening (auto) ===== */
+html,body{overflow-x:hidden;-webkit-text-size-adjust:100%}
+img,video,iframe,table{max-width:100%;height:auto}
+pre,code{white-space:pre-wrap;word-break:break-word}
+
+@media (max-width:720px){
+  /* baseline readable font */
+  html{font-size:16px}
+  body{font-size:16px;line-height:1.55}
+
+  /* tap target floor 44px */
+  a,button,.btn,.nav__link,.nav__caret,.bookmark,
+  input[type=submit],input[type=button],[role=button]{
+    min-height:44px;
+  }
+  .nav__caret{min-width:44px;padding:8px}
+  .bookmark{min-width:44px;display:inline-flex;align-items:center;justify-content:center}
+
+  /* form controls bigger + prevent iOS zoom on focus */
+  input,select,textarea{font-size:16px;min-height:44px;box-sizing:border-box}
+  input[type=checkbox],input[type=radio]{min-height:auto}
+
+  /* tags/meta — bump up so it's readable */
+  .thanks-tag,.tag,.badge{font-size:.85rem;padding:5px 12px}
+
+  /* containers fit viewport */
+  .container,.page,.post{padding-left:14px;padding-right:14px;box-sizing:border-box}
+  .page,.post{max-width:100%}
+
+  /* tables scroll instead of break layout */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+  /* avoid super wide flex children */
+  .slide__text,.search-box{max-width:100%}
+}
+
+@media (max-width:520px){
+  /* slightly tighter on phones */
+  .brand__name{font-size:15px}
+  .section__head h2{font-size:18px}
+  .slide__title{font-size:20px}
+}
