@@ -1,7 +1,22 @@
 // ygiaphan — Dictionary logic
 (function(){
-  const FAVKEY = 'yp:dict:fav';
-  const HISTKEY = 'yp:dict:hist';
+  const FAVKEY   = 'yp:dict:fav';
+  const HISTKEY  = 'yp:dict:hist';
+  const CACHEKEY = 'yp:dict:cache';
+  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
+
+  function loadCache(){
+    try {
+      const raw = localStorage.getItem(CACHEKEY);
+      if (!raw) return null;
+      const { ts, words } = JSON.parse(raw);
+      if (Date.now() - ts > CACHE_TTL) return null;
+      return words;
+    } catch { return null; }
+  }
+  function saveCache(words){
+    try { localStorage.setItem(CACHEKEY, JSON.stringify({ ts: Date.now(), words })); } catch {}
+  }
 
   // ── helpers ──────────────────────────────────────────────
   function getFavs(){ try{ return new Set(JSON.parse(localStorage.getItem(FAVKEY)||'[]')); }catch{ return new Set(); } }
@@ -72,29 +87,45 @@
   // ── loading overlay ──────────────────────────────────────
   function showLoading(on){
     const el = document.getElementById('dict-loading');
-    if (el) el.hidden = !on;
+    if (el) el.style.display = on ? 'flex' : 'none';
   }
 
   // ── main init ─────────────────────────────────────────────
   window.YP_DICT_INIT = async function(){
-    showLoading(true);
     let words = [];
-    try {
-      if (window.YP_API && window.YP_API.on) {
-        const remote = await window.YP_API.loadDict();
-        if (Array.isArray(remote) && remote.length) {
-          words = remote.map(w => ({
-            ...w,
-            id: +w.id,
-            cat: String(w.cat||'').trim()
-          }));
+
+    // 1. try localStorage cache (24h)
+    const cached = loadCache();
+    if (cached && cached.length) {
+      words = cached;
+    } else {
+      // 2. fetch from GAS API with 15s timeout
+      showLoading(true);
+      try {
+        if (window.YP_API && window.YP_API.on) {
+          const timeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('dict timeout')), 15000)
+          );
+          const remote = await Promise.race([window.YP_API.loadDict(), timeout]);
+          if (Array.isArray(remote) && remote.length) {
+            words = remote.map(w => ({
+              ...w,
+              id: +w.id,
+              cat: String(w.cat||'').trim()
+            }));
+            saveCache(words);
+          }
         }
-      }
-    } catch(e){ console.warn('dict API load failed', e); }
-    if (!words.length) words = window.YP_DICT || [];
-    window.YP_DICT = words;
+      } catch(e){ console.warn('dict API load failed', e); }
+    }
     showLoading(false);
-    if (!words.length) return;
+
+    if (!words.length){
+      showLoading(false);
+      const gridEl = document.getElementById('dict-grid');
+      if (gridEl) gridEl.innerHTML = '<p class="muted" style="grid-column:1/-1;text-align:center;padding:2rem">โหลดคำศัพท์ไม่สำเร็จ — กรุณาลองใหม่อีกครั้ง</p>';
+      return;
+    }
     const favs = getFavs();
 
     // Categories

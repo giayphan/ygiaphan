@@ -11,6 +11,9 @@ vendor/
 .idea/
 *.log
 
+# Claude Code working directory
+.claude/
+
 # ไม่ push — clasp & secrets
 gas/.clasp.json
 gas/Code.js
@@ -19,4 +22,5 @@ gas/Code.js
 *.tmp
 
 # ถ้ามี config จริงแยกไฟล์ — gitignore ไว้
+content/config.js
 content/config.local.js

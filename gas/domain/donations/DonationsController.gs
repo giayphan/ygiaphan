@@ -17,16 +17,31 @@ function donateLog_(b){
   sheet_(SH.donations).appendRow([now_(),
     maskEmails_(String(b.name||'').slice(0,50)),
     amount, channel,
-    'pending: ' + maskEmails_(String(b.note||'').slice(0,500))
+    maskEmails_(String(b.note||'').slice(0,500)),
+    false
   ]);
   return {ok:true};
 }
 
 function thanksList_(){
   const rows = rowsAsObjects_(sheet_(SH.donations))
-    .filter(d => d.name && String(d.name).trim() !== '')
+    .filter(d => d.name && String(d.name).trim() !== '' &&
+                 (d.approved === true || String(d.approved).toLowerCase() === 'true'))
     .map(d => ({name:String(d.name).trim(), amount:Number(d.amount)||0, ts:Number(d.ts)||0}))
     .sort((a,b) => b.amount - a.amount || b.ts - a.ts)
     .slice(0,50);
   return {ok:true, list: rows};
+}
+
+function donationApprove_(b){
+  if (!guardAdmin_(b, 'approve_donation', '')) return {error:'unauthorized'};
+  const ts = Number(b.ts);
+  if (!ts) return {error:'missing ts'};
+  const sh = sheet_(SH.donations);
+  const { idx, head } = findRow_(sh, 'ts', ts);
+  if (idx < 0) return {error:'not found'};
+  const col = head.indexOf('approved') + 1;
+  if (col < 1) return {error:'no approved column — run setup() first'};
+  sh.getRange(idx, col).setValue(b.approved === false ? false : true);
+  return {ok:true};
 }
