@@ -22,5 +22,4 @@ gas/Code.js
 *.tmp
 
 # ถ้ามี config จริงแยกไฟล์ — gitignore ไว้
-content/config.js
 content/config.local.js
