@@ -1,13 +1,11 @@
-// ygiaphan — generated at deploy time by GitHub Actions
-// ค่าจริงถูก inject จาก GitHub Secrets โดยอัตโนมัติ
-// ไม่ต้องแก้ไฟล์นี้ตรง ๆ
+// ygiaphan — local config (gitignored)
 window.YP_CONFIG = {
   API_URL: "https://script.google.com/macros/s/AKfycbygIlR4S4sQhJUAOSo0yPR_omIHnZbvkJqmhqGyaLdOqZ9y5kjT9CzgdX3NP_uSCIc/exec",
   USE_API: true,
-  GOOGLE_CLIENT_ID: "PLACEHOLDER_GID",
+  GOOGLE_CLIENT_ID: "988617561301-ei26l4a5o1sguse1vkkfs5ankfrrcshk.apps.googleusercontent.com",
   DONATE: {
-    promptpay: "PLACEHOLDER_PROMPTPAY",
+    promptpay: "0812345678",
     promptpay_qr: "assets/img/promptpay.png",
-    paypal: "PLACEHOLDER_PAYPAL"
+    paypal: "https://paypal.me/yourname"
   }
 };
