@@ -11,6 +11,9 @@ vendor/
 .idea/
 *.log
 
+# Claude Code working directory
+.claude/
+
 # ไม่ push — clasp & secrets
 gas/.clasp.json
 gas/Code.js
