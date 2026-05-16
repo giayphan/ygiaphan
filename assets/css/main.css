@@ -477,16 +477,15 @@ body.is-offline::before{content:"📵 ออฟไลน์ — บางคุ�
   .section__head h2{font-size:20px}
 }
 
-/* ===== Donate mini widget (index) ===== */
-.donate-mini{margin:24px 0;padding:20px;background:var(--brand-bg);border-radius:16px;text-align:center;border:2px dashed var(--green-soft)}
-.donate-mini h3{margin:0 0 4px;color:var(--brand);font-size:1.1rem}
-.donate-mini p{margin:0 0 12px}
-.donate-mini__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:12px}
-.donate-mini__item{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:.9em}
-.donate-mini__item img{max-width:120px;height:auto;border-radius:6px;margin:6px 0;display:block;margin-left:auto;margin-right:auto}
-.donate-mini__item strong{display:block;color:var(--brand);margin-bottom:4px;font-size:.95em}
-.donate-mini__item code{background:var(--green-soft);padding:2px 8px;border-radius:6px;font-size:.85em;user-select:all;display:inline-block;margin-top:4px}
-.donate-mini__item a{display:inline-block;background:var(--brand);color:#fff;padding:6px 14px;border-radius:8px;font-weight:600;margin-top:6px;font-size:.85em}
+/* ===== Supporters (index) ===== */
+.supporters{margin:32px 0 0;padding:18px 20px;background:var(--brand-bg);border-radius:14px;border:1px dashed var(--green-soft)}
+.supporters h3{margin:0 0 10px;color:var(--brand);font-size:1rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.supporters__count{font-size:.78em;font-weight:500;color:var(--muted);background:#fff;padding:2px 10px;border-radius:99px}
+.supporters__list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px}
+.supporters__row{display:flex;justify-content:space-between;gap:8px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:.9em}
+.supporters__name{font-weight:600;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.supporters__meta{color:var(--muted);font-size:.85em;flex-shrink:0}
+.supporters__cta{display:inline-block;margin-top:12px;color:var(--brand);font-weight:600;font-size:.88em}
 
 /* ===== Thanks / Supporters ===== */
 .thanks-list{display:flex;flex-wrap:wrap;gap:6px}

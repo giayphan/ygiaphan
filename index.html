@@ -28,14 +28,7 @@
     <div class="grid grid--3" data-courses></div>
   </section>
 
-  <aside class="donate-mini" id="donateMini" hidden>
-    <h3>💚 สนับสนุนเรา</h3>
-    <p class="muted">ถ้าเนื้อหาช่วยคุณ ช่วยเลี้ยงกาแฟเราหน่อย 🍵</p>
-    <div id="donateMiniGrid" class="donate-mini__grid"></div>
-    <a class="btn btn--primary" href="about.html#donate">ดูช่องทางทั้งหมด →</a>
-  </aside>
-
-  <section id="supporters-section" class="section" style="display:none">
+  <section id="supporters-section" class="supporters" style="display:none">
     <div id="supporters-wrap"></div>
   </section>
 
@@ -73,16 +66,6 @@
 <script src="assets/js/card.js"></script>
 <script src="assets/js/home.js"></script>
 <script>
-// donate mini widget
-(function(){
-  const D = (window.YP_CONFIG||{}).DONATE||{};
-  const items = [];
-  if (D.promptpay) items.push(`<div class="donate-mini__item"><strong>PromptPay 🇹🇭</strong>${D.promptpay_qr?`<img src="${D.promptpay_qr}" alt="QR">`:''}<code>${D.promptpay}</code></div>`);
-  if (D.paypal)    items.push(`<div class="donate-mini__item"><strong>PayPal 🌐</strong><a href="${D.paypal}" target="_blank" rel="noopener">บริจาค</a></div>`);
-  if (!items.length) return;
-  document.getElementById('donateMiniGrid').innerHTML = items.join('');
-  document.getElementById('donateMini').hidden = false;
-})();
 (async function(){
   if (!window.YP_CONFIG || !window.YP_CONFIG.USE_API) return;
   const wrap = document.getElementById('supporters-wrap');
@@ -90,15 +73,26 @@
   if (!wrap || !sec) return;
   try {
     const r = await window.YP_API.thanksList();
-    console.log('[supporters]', r);
     if (!r || !r.ok) return;
     const list = r.list || [];
     if (!list.length) return;
-    wrap.innerHTML =
-      `<h3 style="margin:0 0 8px;color:var(--brand);font-size:1rem">💚 ขอบคุณผู้สนับสนุน</h3>
-       <div class="thanks-list">${list.map(d =>
-         `<span class="thanks-tag" title="${(+d.amount).toLocaleString()} THB">${d.name}</span>`
-       ).join('')}</div>`;
+    // aggregate by name: count + total
+    const agg = {};
+    for (const d of list){
+      const k = (d.name||'ไม่ระบุ').trim();
+      if (!agg[k]) agg[k] = {name:k, count:0, total:0};
+      agg[k].count += 1;
+      agg[k].total += (+d.amount||0);
+    }
+    const rows = Object.values(agg).sort((a,b)=>b.total-a.total);
+    wrap.innerHTML = `
+      <h3>💚 ขอบคุณผู้สนับสนุน <span class="supporters__count">${rows.length} ท่าน</span></h3>
+      <ul class="supporters__list">${rows.map(d => `
+        <li class="supporters__row">
+          <span class="supporters__name">${d.name}</span>
+          <span class="supporters__meta">×${d.count} · ${d.total.toLocaleString()} ฿</span>
+        </li>`).join('')}</ul>
+      <a class="supporters__cta" href="about.html#donate">ร่วมสนับสนุน →</a>`;
     sec.style.display = '';
   } catch(e){ console.warn('[supporters] failed', e); }
 })();
