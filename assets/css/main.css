@@ -467,7 +467,7 @@ body.is-offline::before{content:"📵 ออฟไลน์ — บางคุ�
 /* Mobile */
 @media(max-width:720px){
   .nav-toggle{display:flex;align-items:center;justify-content:center}
-  .nav{display:none;position:absolute;top:100%;left:10px;right:10px;background:#fff;border:2px solid var(--pink-soft);border-radius:var(--radius);flex-direction:column;align-items:stretch;padding:10px;gap:2px;box-shadow:var(--shadow);z-index:60}
+  .nav{display:none;position:fixed;top:72px;left:10px;right:10px;background:#fff;border:2px solid var(--pink-soft);border-radius:var(--radius);flex-direction:column;align-items:stretch;padding:10px;gap:2px;box-shadow:var(--shadow);z-index:60;max-height:calc(100vh - 88px);overflow-y:auto}
   .nav.is-open{display:flex}
   .nav__link{padding:10px 14px;text-align:left;border-radius:var(--radius-sm)}
   .nav__menu{position:static;display:flex;border:0;padding:0 0 0 14px;box-shadow:none;margin:0}
@@ -577,10 +577,5 @@ pre,code{white-space:pre-wrap;word-break:break-word}
 
 /* ===== Mobile nav menu polish ===== */
 @media (max-width:720px){
-  .nav{
-    left:8px !important; right:8px !important;
-    max-height:calc(100vh - 80px);
-    overflow-y:auto;
-  }
   .nav__menu{padding-left:8px !important}
 }
