@@ -19,19 +19,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Generate config.js from secrets
+        env:
+          YP_API_URL: ${{ secrets.API_URL }}
+          YP_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          YP_PROMPTPAY: ${{ secrets.PROMPTPAY }}
+          YP_PAYPAL_URL: ${{ secrets.PAYPAL_URL }}
         run: |
-          cat > content/config.js <<EOF
+          cat > content/config.js << 'ENDOFCONFIG'
           window.YP_CONFIG = {
-            API_URL: "${{ secrets.API_URL }}",
+            API_URL: "PLACEHOLDER_API_URL",
             USE_API: true,
-            GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID }}",
+            GOOGLE_CLIENT_ID: "PLACEHOLDER_GID",
             DONATE: {
-              promptpay: "${{ secrets.PROMPTPAY || '' }}",
+              promptpay: "PLACEHOLDER_PROMPTPAY",
               promptpay_qr: "assets/img/promptpay.png",
-              paypal: "${{ secrets.PAYPAL_URL || '' }}"
+              paypal: "PLACEHOLDER_PAYPAL"
             }
           };
-          EOF
+          ENDOFCONFIG
+          sed -i "s|PLACEHOLDER_API_URL|${YP_API_URL}|g" content/config.js
+          sed -i "s|PLACEHOLDER_GID|${YP_GOOGLE_CLIENT_ID}|g" content/config.js
+          sed -i "s|PLACEHOLDER_PROMPTPAY|${YP_PROMPTPAY}|g" content/config.js
+          sed -i "s|PLACEHOLDER_PAYPAL|${YP_PAYPAL_URL}|g" content/config.js
+          echo "Generated config.js:"
+          cat content/config.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
