@@ -18,32 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Generate config.js from secrets
-        env:
-          YP_API_URL: ${{ secrets.API_URL }}
-          YP_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          YP_PROMPTPAY: ${{ secrets.PROMPTPAY }}
-          YP_PAYPAL_URL: ${{ secrets.PAYPAL_URL }}
-        run: |
-          if [ -z "$YP_API_URL" ]; then echo "::error::secret API_URL is empty or missing"; exit 1; fi
-          if [ -z "$YP_GOOGLE_CLIENT_ID" ]; then echo "::warning::secret GOOGLE_CLIENT_ID is empty"; fi
-          python3 -c "
-          import os
-          lines = [
-            'window.YP_CONFIG = {',
-            '  API_URL: \"' + os.environ['YP_API_URL'] + '\",',
-            '  USE_API: true,',
-            '  GOOGLE_CLIENT_ID: \"' + os.environ['YP_GOOGLE_CLIENT_ID'] + '\",',
-            '  DONATE: {',
-            '    promptpay: \"' + os.environ['YP_PROMPTPAY'] + '\",',
-            '    promptpay_qr: \"assets/img/promptpay.png\",',
-            '    paypal: \"' + os.environ['YP_PAYPAL_URL'] + '\"',
-            '  }',
-            '};',
-          ]
-          open('content/config.js', 'w').write('\n'.join(lines) + '\n')
-          print(open('content/config.js').read())
-          "
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

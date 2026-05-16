@@ -2,7 +2,7 @@
 // ค่าจริงถูก inject จาก GitHub Secrets โดยอัตโนมัติ
 // ไม่ต้องแก้ไฟล์นี้ตรง ๆ
 window.YP_CONFIG = {
-  API_URL: "PLACEHOLDER_API_URL",
+  API_URL: "https://script.google.com/macros/s/AKfycbygIlR4S4sQhJUAOSo0yPR_omIHnZbvkJqmhqGyaLdOqZ9y5kjT9CzgdX3NP_uSCIc/exec",
   USE_API: true,
   GOOGLE_CLIENT_ID: "PLACEHOLDER_GID",
   DONATE: {

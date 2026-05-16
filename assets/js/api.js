@@ -4,10 +4,12 @@
   const ON  = !!(cfg.USE_API && cfg.API_URL);
 
   async function getJSON(url){
+    if (!ON) return {ok:false, offline:true};
     const r = await fetch(url, {method:'GET'});
     return r.json();
   }
   async function postJSON(body){
+    if (!ON) return {ok:false, offline:true};
     // text/plain + body JSON = simple request → ไม่ trigger CORS preflight
     const r = await fetch(cfg.API_URL, {
       method:'POST',
