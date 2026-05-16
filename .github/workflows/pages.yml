@@ -25,24 +25,23 @@ jobs:
           YP_PROMPTPAY: ${{ secrets.PROMPTPAY }}
           YP_PAYPAL_URL: ${{ secrets.PAYPAL_URL }}
         run: |
-          cat > content/config.js << 'ENDOFCONFIG'
-          window.YP_CONFIG = {
-            API_URL: "PLACEHOLDER_API_URL",
-            USE_API: true,
-            GOOGLE_CLIENT_ID: "PLACEHOLDER_GID",
-            DONATE: {
-              promptpay: "PLACEHOLDER_PROMPTPAY",
-              promptpay_qr: "assets/img/promptpay.png",
-              paypal: "PLACEHOLDER_PAYPAL"
-            }
-          };
-          ENDOFCONFIG
-          sed -i "s|PLACEHOLDER_API_URL|${YP_API_URL}|g" content/config.js
-          sed -i "s|PLACEHOLDER_GID|${YP_GOOGLE_CLIENT_ID}|g" content/config.js
-          sed -i "s|PLACEHOLDER_PROMPTPAY|${YP_PROMPTPAY}|g" content/config.js
-          sed -i "s|PLACEHOLDER_PAYPAL|${YP_PAYPAL_URL}|g" content/config.js
-          echo "Generated config.js:"
-          cat content/config.js
+          python3 -c "
+          import os
+          lines = [
+            'window.YP_CONFIG = {',
+            '  API_URL: \"' + os.environ['YP_API_URL'] + '\",',
+            '  USE_API: true,',
+            '  GOOGLE_CLIENT_ID: \"' + os.environ['YP_GOOGLE_CLIENT_ID'] + '\",',
+            '  DONATE: {',
+            '    promptpay: \"' + os.environ['YP_PROMPTPAY'] + '\",',
+            '    promptpay_qr: \"assets/img/promptpay.png\",',
+            '    paypal: \"' + os.environ['YP_PAYPAL_URL'] + '\"',
+            '  }',
+            '};',
+          ]
+          open('content/config.js', 'w').write('\n'.join(lines) + '\n')
+          print(open('content/config.js').read())
+          "
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
