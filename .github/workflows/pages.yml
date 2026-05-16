@@ -25,6 +25,8 @@ jobs:
           YP_PROMPTPAY: ${{ secrets.PROMPTPAY }}
           YP_PAYPAL_URL: ${{ secrets.PAYPAL_URL }}
         run: |
+          if [ -z "$YP_API_URL" ]; then echo "::error::secret API_URL is empty or missing"; exit 1; fi
+          if [ -z "$YP_GOOGLE_CLIENT_ID" ]; then echo "::warning::secret GOOGLE_CLIENT_ID is empty"; fi
           python3 -c "
           import os
           lines = [
