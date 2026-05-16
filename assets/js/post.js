@@ -209,7 +209,9 @@ async function renderComments(slug){
       const startedAt = Date.now();
       const form = document.createElement('form');
       form.className = 'comment__reply-form';
+      const parentTs = btn.dataset.reply;
       form.innerHTML = `
+        <input type="hidden" name="parent_ts" value="${escapeHtml(parentTs)}">
         <div class="comment__replying-to">↩ ตอบกลับ <strong>${escapeHtml(replyToName)}</strong></div>
         ${isLogin ? '' : `<input name="name" placeholder="ชื่อ" required maxlength="50">`}
         <textarea name="msg" required maxlength="2000" placeholder="ตอบกลับ ${escapeHtml(replyToName)}…"></textarea>
@@ -239,7 +241,7 @@ async function renderComments(slug){
         const sb = form.querySelector('button[type=submit]');
         sb.disabled = true; sb.textContent = '...';
         try {
-          const r = await window.YP_API.addComment(slug, name, msg, btn.dataset.reply);
+          const r = await window.YP_API.addComment(slug, name, msg, form.parent_ts.value);
           if (r && r.error){ errEl.hidden=false; errEl.textContent='✗ '+r.error; sb.disabled=false; sb.textContent='ส่ง'; return; }
           await renderComments(slug);
         } catch(err){ errEl.hidden=false; errEl.textContent='✗ '+err.message; sb.disabled=false; sb.textContent='ส่ง'; }
