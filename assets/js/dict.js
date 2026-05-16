@@ -22,21 +22,17 @@
 
   function normalize(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim(); }
 
-  // ── word of the day ───────────────────────────────────────
-  function wordOfDay(words){
-    const d = new Date(); const idx = (d.getFullYear()*366 + d.getMonth()*31 + d.getDate()) % words.length;
-    return words[idx];
-  }
-
   // ── render word card ─────────────────────────────────────
   function cardHtml(w, favs, mode){
     const isFav = favs.has(w.id);
     const T = window.YP_T || {};
     const lang = window.YP_LANG || 'vi';
-    const primary   = lang === 'th' ? w.th  : w.vi;
-    const secondary = lang === 'th' ? w.vi  : w.th;
-    const phonetic  = lang === 'th' ? w.pv  : w.pt;
-    const example   = lang === 'th' ? w.ex_th : w.ex_vi;
+    // TH UI: เรียนเวียดนาม → primary=vi, phonetic=pv, secondary=th, example=ex_vi
+    // VI UI: เรียนไทย    → primary=th, phonetic=pt, secondary=vi, example=ex_th
+    const primary   = lang === 'th' ? w.vi    : w.th;
+    const phonetic  = lang === 'th' ? w.pv    : w.pt;
+    const secondary = lang === 'th' ? w.th    : w.vi;
+    const example   = lang === 'th' ? w.ex_vi : w.ex_th;
     return `<div class="dict-card${mode==='flash'?' dict-card--flash':''}" data-id="${w.id}">
       <div class="dict-card__front">
         <div class="dict-card__cat">${catLabel(w.cat)}</div>
@@ -51,12 +47,15 @@
     </div>`;
   }
 
-  const CAT_LABELS = {
+  const CAT_TH = {
     greetings:'ทักทาย', numbers:'ตัวเลข', colors:'สี', days:'วัน',
     family:'ครอบครัว', body:'ร่างกาย', transport:'การเดินทาง',
     weather:'สภาพอากาศ', food:'อาหาร', phrases:'ประโยค'
   };
-  function catLabel(c){ return CAT_LABELS[c]||c; }
+  function catLabel(c){
+    const th = CAT_TH[c] || c;
+    return window.tCat ? window.tCat(th) : th;
+  }
   function esc(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
   // ── search ───────────────────────────────────────────────
@@ -76,19 +75,11 @@
     if (!words.length) return;
     const favs = getFavs();
 
-    // Word of the Day
-    const wod = wordOfDay(words);
-    const wodEl = document.getElementById('dict-wod');
-    if (wodEl) {
-      wodEl.innerHTML = cardHtml(wod, favs, 'wod');
-      wodEl.querySelector('[data-fav]').addEventListener('click', onFav);
-    }
-
     // Categories
     const cats = [...new Set(words.map(w=>w.cat))];
     const catEl = document.getElementById('dict-cats');
     if (catEl){
-      catEl.innerHTML = `<button class="pill is-active" data-cat="">ทั้งหมด</button>` +
+      catEl.innerHTML = `<button class="pill is-active" data-cat="">${(window.YP_T&&window.YP_T.all)||'ทั้งหมด'}</button>` +
         cats.map(c=>`<button class="pill" data-cat="${c}">${catLabel(c)}</button>`).join('');
     }
 
@@ -119,10 +110,10 @@
       const w = results[flashIdx];
       const isFav = favs.has(w.id);
       const lang = window.YP_LANG||'vi';
-      const front = lang==='th' ? w.th : w.vi;
-      const back  = lang==='th' ? w.vi : w.th;
-      const phonetic = lang==='th' ? w.pv : w.pt;
-      const example  = lang==='th' ? w.ex_th : w.ex_vi;
+      const front    = lang==='th' ? w.vi    : w.th;
+      const back     = lang==='th' ? w.th    : w.vi;
+      const phonetic = lang==='th' ? w.pv    : w.pt;
+      const example  = lang==='th' ? w.ex_vi : w.ex_th;
       flashWrap.innerHTML = `
         <div class="flash-card" id="flash-inner">
           <div class="flash-card__side flash-card__front">
