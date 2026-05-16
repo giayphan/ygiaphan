@@ -18,6 +18,11 @@ function findRow_(sh, key, val){
 
 function ensureSheet_(ss, name, headers){
   let sh = ss.getSheetByName(name);
-  if (!sh) sh = ss.insertSheet(name);
-  if (sh.getLastRow() === 0) sh.appendRow(headers);
+  if (!sh){ sh = ss.insertSheet(name); sh.appendRow(headers); return; }
+  if (sh.getLastRow() === 0){ sh.appendRow(headers); return; }
+  // add missing columns to existing sheet
+  const existing = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+  headers.forEach(h => {
+    if (!existing.includes(h)) sh.getRange(1, existing.length + 1).setValue(h);
+  });
 }
