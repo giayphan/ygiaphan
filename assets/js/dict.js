@@ -81,7 +81,10 @@
     let words = [];
     try {
       if (window.YP_API && window.YP_API.on) {
-        const remote = await window.YP_API.loadDict();
+        const timeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('dict timeout')), 5000)
+        );
+        const remote = await Promise.race([window.YP_API.loadDict(), timeout]);
         if (Array.isArray(remote) && remote.length) {
           words = remote.map(w => ({
             ...w,
