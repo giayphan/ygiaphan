@@ -181,21 +181,23 @@ async function renderComments(slug){
   // build tree
   const byParent = {0:[]};
   list.forEach(c => { const k = c.parent_ts||0; if (!byParent[k]) byParent[k]=[]; byParent[k].push(c); });
-  function renderOne(c){
+  function renderOne(c, parentName){
     const av = c.avatar ? `<img class="comment__avatar" src="${escapeHtml(c.avatar)}" alt="">` : `<span class="comment__avatar comment__avatar--ph">${escapeHtml((c.name||'?')[0])}</span>`;
     const badge = c.is_member ? `<span class="comment__badge" title="สมาชิก">✓</span>` : '';
-    const replies = (byParent[c.ts]||[]).map(renderOne).join('');
+    const replies = (byParent[c.ts]||[]).map(r => renderOne(r, c.name)).join('');
+    const replyTo = parentName ? `<div class="comment__reply-badge">↩ ตอบกลับ <strong>${escapeHtml(parentName)}</strong></div>` : '';
     return `<div class="comment yp-fade-in">
       ${av}
       <div class="comment__main">
         <div class="comment__head"><strong>${escapeHtml(c.name)}</strong>${badge} · <span class="muted">${new Date(c.ts).toLocaleString()}</span></div>
+        ${replyTo}
         <div class="comment__body">${escapeHtml(c.msg).replace(/\n/g,'<br>')}</div>
         <div class="comment__actions"><button class="comment__action" data-reply="${c.ts}">↩ ตอบกลับ</button></div>
         ${replies?`<div class="comment__replies">${replies}</div>`:''}
       </div>
     </div>`;
   }
-  el.innerHTML = (byParent[0]||[]).map(renderOne).join('');
+  el.innerHTML = (byParent[0]||[]).map(c => renderOne(c, null)).join('');
   // bind reply buttons
   el.querySelectorAll('[data-reply]').forEach(btn => {
     btn.onclick = () => {

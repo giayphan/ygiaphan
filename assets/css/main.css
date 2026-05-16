@@ -277,6 +277,8 @@ a:hover{color:var(--brand);text-decoration:none}
 .comment__reply-form .form-error{margin:0;font-size:.85em}
 .comment__replying-to{font-size:.85em;color:var(--muted);background:var(--brand-bg);border-radius:6px;padding:6px 10px;display:flex;align-items:center;gap:4px}
 .comment__replying-to strong{color:var(--brand)}
+.comment__reply-badge{font-size:.8em;color:var(--brand);margin-bottom:4px}
+.comment__reply-badge strong{font-weight:600}
 
 /* Vocab block */
 .vocab-block{background:var(--brand-bg);border-radius:16px;padding:20px;margin:24px 0}
