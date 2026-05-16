@@ -104,7 +104,7 @@
       try {
         if (window.YP_API && window.YP_API.on) {
           const timeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('dict timeout')), 5000)
+            setTimeout(() => reject(new Error('dict timeout')), 15000)
           );
           const remote = await Promise.race([window.YP_API.loadDict(), timeout]);
           if (Array.isArray(remote) && remote.length) {
@@ -122,6 +122,8 @@
 
     if (!words.length){
       showLoading(false);
+      const gridEl = document.getElementById('dict-grid');
+      if (gridEl) gridEl.innerHTML = '<p class="muted" style="grid-column:1/-1;text-align:center;padding:2rem">โหลดคำศัพท์ไม่สำเร็จ — กรุณาลองใหม่อีกครั้ง</p>';
       return;
     }
     const favs = getFavs();
