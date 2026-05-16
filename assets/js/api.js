@@ -23,12 +23,16 @@
       if (!ON) return null;
       const token = window.YP_AUTH ? window.YP_AUTH.token() : '';
       const list = await getJSON(cfg.API_URL + '?action=posts' + (token?'&token='+encodeURIComponent(token):''));
-      // map → window.YP_POSTS + window.YP_POST_LIST
-      window.YP_POSTS = {};
+      // merge: local posts fill gaps not in API; API takes precedence on overlap
+      const localPosts = window.YP_POSTS || {};
+      const localList  = window.YP_POST_LIST || [];
+      window.YP_POSTS  = Object.assign({}, localPosts);
       list.forEach(p => window.YP_POSTS[p.slug] = p);
-      window.YP_POST_LIST = list.map(p => p.slug);
-      window.POSTS = list;
-      return list;
+      const apiSlugs   = new Set(list.map(p => p.slug));
+      const extraSlugs = localList.filter(s => !apiSlugs.has(s));
+      window.YP_POST_LIST = [...list.map(p => p.slug), ...extraSlugs];
+      window.POSTS = window.YP_POST_LIST.map(s => window.YP_POSTS[s]).filter(Boolean);
+      return window.POSTS;
     },
     listComments(slug){ return getJSON(cfg.API_URL + '?action=comments&slug=' + encodeURIComponent(slug)); },
     addComment(slug, name, msg){
