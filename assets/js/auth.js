@@ -27,8 +27,12 @@
     isLogin(){ return !!this.token(); },
     async me(){
       const t = this.token(); if (!t) return null;
-      try { return await fetch(cfg.API_URL+'?action=me&token='+encodeURIComponent(t)).then(r=>r.json()); }
-      catch(_){ return null; }
+      if (!cfg.API_URL) return null;
+      try {
+        const r = await fetch(cfg.API_URL+'?action=me&token='+encodeURIComponent(t));
+        if (!r.ok) return null;
+        return await r.json();
+      } catch(_){ return null; }
     },
     magicSend(email){ return post({action:'magic_send', email}); },
     magicVerify(email, otp){ return post({action:'magic_verify', email, otp}); },
