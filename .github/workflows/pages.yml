@@ -18,6 +18,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Generate config.js from secrets
+        run: |
+          cat > content/config.js <<EOF
+          window.YP_CONFIG = {
+            API_URL: "${{ secrets.API_URL }}",
+            USE_API: true,
+            GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID }}",
+            DONATE: {
+              promptpay: "${{ secrets.PROMPTPAY || '' }}",
+              promptpay_qr: "assets/img/promptpay.png",
+              paypal: "${{ secrets.PAYPAL_URL || '' }}"
+            }
+          };
+          EOF
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
