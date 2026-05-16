@@ -99,7 +99,7 @@
     if (cached && cached.length) {
       words = cached;
     } else {
-      // 2. fetch from GAS API with 5s timeout
+      // 2. fetch from GAS API with 15s timeout
       showLoading(true);
       try {
         if (window.YP_API && window.YP_API.on) {
@@ -117,8 +117,8 @@
           }
         }
       } catch(e){ console.warn('dict API load failed', e); }
-      showLoading(false);
     }
+    showLoading(false);
 
     if (!words.length){
       showLoading(false);
