@@ -201,15 +201,16 @@ async function renderComments(slug){
     btn.onclick = () => {
       el.querySelectorAll('.comment__reply-form').forEach(f => f.remove());
       const main = btn.closest('.comment__main');
+      const replyToName = main.querySelector('.comment__head strong').textContent;
       const isLogin = window.YP_AUTH && window.YP_AUTH.isLogin();
       const cap = makeCaptcha();
       const startedAt = Date.now();
       const form = document.createElement('form');
       form.className = 'comment__reply-form';
-      // member ไม่ต้อง name + captcha; guest ต้องมีทั้งคู่
       form.innerHTML = `
+        <div class="comment__replying-to">↩ ตอบกลับ <strong>${escapeHtml(replyToName)}</strong></div>
         ${isLogin ? '' : `<input name="name" placeholder="ชื่อ" required maxlength="50">`}
-        <textarea name="msg" required maxlength="2000" placeholder="ตอบกลับ..."></textarea>
+        <textarea name="msg" required maxlength="2000" placeholder="ตอบกลับ ${escapeHtml(replyToName)}…"></textarea>
         <input name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" aria-hidden="true">
         ${isLogin ? '' : `<label class="captcha"><span>Verify: <strong>${cap.q}</strong></span><input name="answer" required inputmode="numeric" pattern="-?[0-9]+" autocomplete="off"></label>`}
         <div><button type="button" class="btn btn--ghost" data-cancel>ยกเลิก</button><button type="submit" class="btn btn--primary">ส่ง</button></div>
