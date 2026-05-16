@@ -34,6 +34,27 @@
   const reset = () => { clearInterval(timer); timer = setInterval(next, 5000); };
   if (slidesEls.length > 1) reset();
 
+  // Touch swipe
+  if (slidesEls.length > 1){
+    let x0=null, y0=null, dx=0;
+    slider.addEventListener('touchstart', e => {
+      const t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; dx = 0;
+      clearInterval(timer);
+    }, {passive:true});
+    slider.addEventListener('touchmove', e => {
+      if (x0===null) return;
+      dx = e.touches[0].clientX - x0;
+    }, {passive:true});
+    slider.addEventListener('touchend', () => {
+      if (Math.abs(dx) > 40){
+        const n = dx < 0 ? (idx+1) % slidesEls.length : (idx-1+slidesEls.length) % slidesEls.length;
+        show(n);
+      }
+      x0 = y0 = null; dx = 0;
+      reset();
+    });
+  }
+
   // Section labels
   const head = document.querySelector('[data-section-daily]');
   if (head){

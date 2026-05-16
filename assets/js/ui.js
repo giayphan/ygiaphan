@@ -49,11 +49,20 @@
     el.outerHTML = el.dataset.include === 'header' ? header : footer;
   });
 
-  // Nav toggle (mobile)
-  const navEl = document.querySelector('.nav');
-  document.querySelector('.nav-toggle')?.addEventListener('click', e => {
-    const open = navEl.classList.toggle('is-open');
-    e.currentTarget.setAttribute('aria-expanded', open);
+  // Nav toggle (mobile) — delegate so it survives header re-injects
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.nav-toggle');
+    const navEl = document.querySelector('.nav');
+    if (btn && navEl){
+      const open = navEl.classList.toggle('is-open');
+      btn.setAttribute('aria-expanded', open);
+      return;
+    }
+    // close when tapping outside
+    if (navEl?.classList.contains('is-open') && !e.target.closest('.nav') && !e.target.closest('.nav-toggle')){
+      navEl.classList.remove('is-open');
+      document.querySelector('.nav-toggle')?.setAttribute('aria-expanded','false');
+    }
   });
 
   // Language switch
