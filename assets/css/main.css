@@ -540,3 +540,29 @@ pre,code{white-space:pre-wrap;word-break:break-word}
   .comment__reply-form{padding:10px}
   .comment__reply-form > div{flex-wrap:wrap}
 }
+
+/* ===== Comment tree: hard cap indent on mobile (override) ===== */
+@media (max-width:720px){
+  .comment__replies,
+  .comment__replies .comment__replies,
+  .comment__replies .comment__replies .comment__replies,
+  .comment__replies .comment__replies .comment__replies .comment__replies{
+    margin-left:10px !important;
+    padding-left:10px !important;
+    border-left:2px solid var(--line);
+  }
+  .comment{padding:10px 12px}
+  .comment__head{font-size:12px;flex-wrap:wrap}
+  .comment__avatar{width:28px;height:28px}
+  .comment{gap:8px}
+}
+
+/* ===== Mobile nav menu polish ===== */
+@media (max-width:720px){
+  .nav{
+    left:8px !important; right:8px !important;
+    max-height:calc(100vh - 80px);
+    overflow-y:auto;
+  }
+  .nav__menu{padding-left:8px !important}
+}
