@@ -87,7 +87,7 @@
   // ── loading overlay ──────────────────────────────────────
   function showLoading(on){
     const el = document.getElementById('dict-loading');
-    if (el) el.hidden = !on;
+    if (el) el.style.display = on ? 'flex' : 'none';
   }
 
   // ── main init ─────────────────────────────────────────────
