@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>พจนานุกรม ไทย↔เวียดนาม · ygiaphan</title>
+<link rel="icon" href="assets/img/favicon.svg">
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<div data-include="header"></div>
+
+<main class="container">
+
+  <!-- Hero search -->
+  <section class="dict-hero">
+    <h1 class="dict-hero__title">
+      <span class="dict-hero__vi">Từ điển</span>
+      <span class="dict-hero__sep">↔</span>
+      <span class="dict-hero__th">พจนานุกรม</span>
+    </h1>
+    <p class="dict-hero__sub">ไทย ↔ เวียดนาม · ค้นหาทันที · บันทึกคำโปรด · ฝึกด้วยแฟลชการ์ด</p>
+    <div class="dict-search-wrap">
+      <span class="dict-search-ico">🔍</span>
+      <input id="dict-search" class="dict-search" type="search"
+             placeholder="พิมพ์ภาษาไทยหรือเวียดนาม…" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+  </section>
+
+  <!-- Word of the Day -->
+  <section class="dict-section">
+    <div class="dict-section__head">
+      <h2>✨ คำประจำวัน</h2>
+    </div>
+    <div id="dict-wod" class="dict-wod-wrap"></div>
+  </section>
+
+  <!-- Controls -->
+  <section class="dict-section">
+    <div class="dict-section__head">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <h2>คำศัพท์</h2>
+        <span id="dict-count" class="muted" style="font-size:.9em"></span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="dict-favs-toggle" class="btn btn--ghost btn--sm">★ คำโปรด</button>
+        <button id="dict-flash-toggle" class="btn btn--ghost btn--sm">🃏 โหมดแฟลชการ์ด</button>
+      </div>
+    </div>
+
+    <!-- Category pills -->
+    <div id="dict-cats" class="dict-cats"></div>
+
+    <!-- Flashcard view (hidden by default) -->
+    <div id="dict-flash" class="dict-flash-wrap" hidden></div>
+
+    <!-- Grid view -->
+    <div id="dict-grid" class="dict-grid"></div>
+  </section>
+
+</main>
+
+<div data-include="footer"></div>
+
+<script src="content/config.js"></script>
+<script src="content/i18n/vi.js"></script>
+<script src="content/i18n/th.js"></script>
+<script src="content/site.js"></script>
+<script src="content/nav.js"></script>
+<script src="content/dictionary.js"></script>
+<script src="assets/js/pwa.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/dict.js"></script>
+<script>document.addEventListener('DOMContentLoaded', window.YP_DICT_INIT);</script>
+</body>
+</html>

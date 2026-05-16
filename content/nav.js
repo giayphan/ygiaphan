@@ -7,6 +7,7 @@ window.YP_NAV = [
     { vi: "Cá nhân",     th: "สอนส่วนตัว",   url: "courses.html#private" },
     { vi: "Nhóm",        th: "สอนแบบกลุ่ม",  url: "courses.html#group" }
   ]},
+  { vi: "Từ điển",   th: "พจนานุกรม", url: "dictionary.html" },
   { vi: "Chủ đề",    th: "หมวด",     url: "category.html" },
   { vi: "Giới thiệu", th: "เกี่ยวกับ", url: "about.html" },
   { vi: "Liên hệ",   th: "ติดต่อ",    url: "contact.html" }
