@@ -85,7 +85,7 @@ a:hover{color:var(--brand);text-decoration:none}
 
 /* Header */
 .site-header{background:rgba(246,251,243,.9);backdrop-filter:blur(10px);position:sticky;top:0;z-index:50;border-bottom:2px dashed var(--green-soft)}
-.site-header__row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 20px}
+.site-header__row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 20px;position:relative}
 .brand{display:flex;align-items:center;gap:12px;color:var(--fg);transition:transform .2s}
 .brand:hover{text-decoration:none;color:var(--pink-deep);transform:translateY(-1px)}
 .brand__logo{
@@ -467,7 +467,7 @@ body.is-offline::before{content:"📵 ออฟไลน์ — บางคุ�
 /* Mobile */
 @media(max-width:720px){
   .nav-toggle{display:flex;align-items:center;justify-content:center}
-  .nav{display:none;position:absolute;top:64px;left:10px;right:10px;background:#fff;border:2px solid var(--pink-soft);border-radius:var(--radius);flex-direction:column;align-items:stretch;padding:10px;gap:2px;box-shadow:var(--shadow)}
+  .nav{display:none;position:absolute;top:100%;left:10px;right:10px;background:#fff;border:2px solid var(--pink-soft);border-radius:var(--radius);flex-direction:column;align-items:stretch;padding:10px;gap:2px;box-shadow:var(--shadow);z-index:60}
   .nav.is-open{display:flex}
   .nav__link{padding:10px 14px;text-align:left;border-radius:var(--radius-sm)}
   .nav__menu{position:static;display:flex;border:0;padding:0 0 0 14px;box-shadow:none;margin:0}
@@ -492,11 +492,18 @@ pre,code{white-space:pre-wrap;word-break:break-word}
   html{font-size:16px}
   body{font-size:16px;line-height:1.55}
 
-  /* tap target floor 44px */
+  /* tap target floor 44px — exclude small UI dots/chips/tags */
   a,button,.btn,.nav__link,.nav__caret,.bookmark,
   input[type=submit],input[type=button],[role=button]{
     min-height:44px;
   }
+  .slider__dots button,.filters a,.filters button,
+  .tag,.thanks-tag,.badge,.ad-badge,.nav__caret{
+    min-height:0;
+  }
+  .filters a,.filters button{min-height:36px;display:inline-flex;align-items:center}
+  .slider__dots button{width:12px;height:12px}
+  .slider__dots button.is-active{width:28px}
   .nav__caret{min-width:44px;padding:8px}
   .bookmark{min-width:44px;display:inline-flex;align-items:center;justify-content:center}
 
