@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for secrets in config.js
+        run: |
+          if grep -q "change-me-please\|PUT_YOUR_SHEET_ID" content/config.js 2>/dev/null; then
+            echo "::warning::Placeholder values detected in content/config.js"
+          fi
+
+      - name: Validate HTML structure
+        run: |
+          for f in *.html; do
+            echo "Checking $f..."
+            grep -q "<!doctype html" "$f" || echo "::warning file=$f::Missing doctype"
+            grep -q 'charset="utf-8"' "$f" || echo "::warning file=$f::Missing charset meta"
+            grep -q 'name="viewport"' "$f" || echo "::warning file=$f::Missing viewport meta"
+          done
+
+      - name: Check no app.js references remain
+        run: |
+          if grep -r "assets/js/app.js" *.html 2>/dev/null; then
+            echo "::error::Old app.js reference found — use pwa.js, i18n.js, ui.js, card.js instead"
+            exit 1
+          fi
+
+      - name: Check no hardcoded admin emails in JS
+        run: |
+          if grep -r "ADMIN_EMAILS\s*=" assets/js/ 2>/dev/null; then
+            echo "::error::Hardcoded admin email list found in frontend JS"
+            exit 1
+          fi

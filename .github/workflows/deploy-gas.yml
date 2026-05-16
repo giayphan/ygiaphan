@@ -1,0 +1,68 @@
+name: Deploy Google Apps Script
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'gas/**'
+      - '.github/workflows/deploy-gas.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install clasp
+        run: npm install -g @google/clasp
+
+      - name: Write clasp credentials
+        run: echo '${{ secrets.CLASPRC_JSON }}' > ~/.clasprc.json
+
+      - name: Write clasp project config
+        run: echo '${{ secrets.CLASP_JSON }}' > gas/.clasp.json
+
+      - name: Push code to Apps Script
+        working-directory: gas
+        run: clasp push --force
+
+      # ---- set Script Properties via clasp run ----
+      # ต้องการ: Apps Script API enabled ใน GCP project ของ script นี้
+      # วิธี enable: console.cloud.google.com → APIs & Services → Enable APIs
+      #              → ค้นหา "Apps Script API" → Enable
+      - name: Set Script Properties
+        working-directory: gas
+        env:
+          GAS_SHEET_ID:    ${{ secrets.GAS_SHEET_ID }}
+          GAS_ADMIN_KEY:   ${{ secrets.GAS_ADMIN_KEY }}
+          GAS_ADMIN_EMAIL: ${{ secrets.GAS_ADMIN_EMAIL }}
+          GAS_SITE_URL:    ${{ secrets.GAS_SITE_URL }}
+          GAS_FB_APP_ID:   ${{ secrets.GAS_FB_APP_ID }}
+        run: |
+          PARAMS=$(node -e "
+            const p = {
+              SHEET_ID:    process.env.GAS_SHEET_ID,
+              ADMIN_KEY:   process.env.GAS_ADMIN_KEY,
+              ADMIN_EMAIL: process.env.GAS_ADMIN_EMAIL,
+              SITE_URL:    process.env.GAS_SITE_URL,
+              FB_APP_ID:   process.env.GAS_FB_APP_ID || ''
+            };
+            console.log(JSON.stringify([p]));
+          ")
+          clasp run setProperties --params "$PARAMS"
+
+      - name: Verify properties set correctly
+        working-directory: gas
+        run: |
+          RESULT=$(clasp run checkProperties)
+          echo "Property check result: $RESULT"
+          echo "$RESULT" | grep -q '"ok":true' || {
+            echo "::error::Script Properties ไม่ครบ — ตรวจสอบ GitHub Secrets"
+            exit 1
+          }

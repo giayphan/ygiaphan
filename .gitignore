@@ -11,7 +11,12 @@ vendor/
 .idea/
 *.log
 
-# ไม่ push (ส่วนตัว/ไม่ใช้ตอน deploy)
-gas/                 # โค้ด Apps Script — เอาไป paste ใน script.google.com เอง
+# ไม่ push — clasp & secrets
+gas/.clasp.json
+gas/Code.js
+.env
 *.bak
 *.tmp
+
+# ถ้ามี config จริงแยกไฟล์ — gitignore ไว้
+content/config.local.js
