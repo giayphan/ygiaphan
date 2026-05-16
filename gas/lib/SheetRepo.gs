@@ -20,9 +20,12 @@ function ensureSheet_(ss, name, headers){
   let sh = ss.getSheetByName(name);
   if (!sh){ sh = ss.insertSheet(name); sh.appendRow(headers); return; }
   if (sh.getLastRow() === 0){ sh.appendRow(headers); return; }
-  // add missing columns to existing sheet
-  const existing = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
-  headers.forEach(h => {
-    if (!existing.includes(h)) sh.getRange(1, existing.length + 1).setValue(h);
+  // ensure each header is at its correct column index
+  const ncols = Math.max(sh.getLastColumn(), headers.length);
+  const row = sh.getRange(1, 1, 1, ncols).getValues()[0];
+  let changed = false;
+  headers.forEach((h, i) => {
+    if (String(row[i]||'') !== h){ row[i] = h; changed = true; }
   });
+  if (changed) sh.getRange(1, 1, 1, ncols).setValues([row]);
 }
