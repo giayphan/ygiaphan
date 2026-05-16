@@ -18,6 +18,40 @@ function setPropertiesManual() {
   });
 }
 
+// แก้ header row ของทุก sheet ให้ครบตาม schema
+// รันครั้งเดียวใน GAS editor เพื่อแก้ปัญหา missing/wrong columns
+function fixSheetHeaders() {
+  const ss = SpreadsheetApp.openById(
+    PropertiesService.getScriptProperties().getProperty('SHEET_ID')
+  );
+  const schemas = {
+    'comments':  ['ts','slug','name','msg','user_id','approved','parent_ts'],
+    'posts':     ['slug','date','categories','icon','cover','video','title_vi','title_th','desc_vi','desc_th','body_vi','body_th','published','members_only'],
+    'users':     ['user_id','email','name','provider','fb_id','avatar','created_at','last_login'],
+    'sessions':  ['token','user_id','created_at','expires_at'],
+    'orders':    ['order_id','user_id','email','item_id','item_title','amount','currency','status','slip_url','created_at','paid_at','note'],
+    'donations': ['ts','name','amount','channel','note'],
+    'magic':     ['token','email','created_at','expires_at','used'],
+    'vocab':     ['user_id','vi','th','slug','box','due_at','created_at'],
+    'quiz_log':  ['user_id','slug','score','total','ts'],
+    'bookmarks': ['user_id','slug','created_at'],
+  };
+  const results = [];
+  Object.entries(schemas).forEach(([name, headers]) => {
+    const sh = ss.getSheetByName(name);
+    if (!sh) { results.push(name + ': sheet not found'); return; }
+    const ncols = Math.max(sh.getLastColumn(), headers.length);
+    const row = sh.getRange(1, 1, 1, ncols).getValues()[0];
+    const before = row.slice(0, headers.length).join(',');
+    headers.forEach((h, i) => { if (String(row[i]||'') !== h) row[i] = h; });
+    sh.getRange(1, 1, 1, ncols).setValues([row]);
+    const after = sh.getRange(1, 1, 1, headers.length).getValues()[0].join(',');
+    results.push(name + ': ' + (before === after ? 'ok' : 'fixed → ' + after));
+  });
+  Logger.log(results.join('\n'));
+  return results;
+}
+
 // ตรวจสอบว่า properties ตั้งครบไหม
 function checkProperties() {
   const sp = PropertiesService.getScriptProperties();
