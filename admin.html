@@ -356,7 +356,7 @@ async function loadDashboard(){
         : '<p class="muted">✓ ไม่มี comment ที่รออนุมัติ</p>';
       $('#d-pending').querySelectorAll('[data-approve]').forEach(btn => btn.onclick = async () => {
         btn.disabled = true; btn.textContent = '...';
-        const r = await post({action:'admin_approve', ts: btn.dataset.approve, slug: btn.dataset.slug});
+        const r = await post({action:'admin_approve', ts: btn.dataset.approve, slug: btn.dataset.slug, approved: true});
         if (r.ok) loadDashboard();
         else { btn.disabled = false; btn.textContent = '✗ '+r.error; }
       });
