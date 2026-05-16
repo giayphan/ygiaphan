@@ -678,16 +678,31 @@ function renderUsers(){
 
 /* ===== Donations ===== */
 function renderDonations(){
-  const total = (DATA.donations||[]).reduce((s,d)=>s+(+d.amount||0),0);
-  $('#d-list').innerHTML = `<div class="card"><strong>รวมทั้งหมด:</strong> ${total.toLocaleString()} THB</div>` +
-    (DATA.donations||[]).map(d => `
-    <div class="item yp-fade-in">
-      <div>
-        <strong>${escapeHtml(d.name||'ไม่ระบุ')}</strong> — ${(+d.amount).toLocaleString()} THB
-        <span class="pill">${escapeHtml(d.channel)}</span>
-        <br><span class="muted">${new Date(+d.ts).toLocaleString()} · ${escapeHtml(d.note||'')}</span>
-      </div>
-    </div>`).join('');
+  const list = DATA.donations||[];
+  const total = list.reduce((s,d)=>s+(+d.amount||0),0);
+  const approved = list.filter(d=>d.approved===true||String(d.approved).toLowerCase()==='true');
+  $('#d-list').innerHTML =
+    `<div class="card"><strong>รวมทั้งหมด:</strong> ${total.toLocaleString()} THB &nbsp;·&nbsp; อนุมัติแล้ว ${approved.length} รายการ</div>` +
+    list.map(d => {
+      const isApproved = d.approved===true||String(d.approved).toLowerCase()==='true';
+      return `<div class="item yp-fade-in" id="don-${d.ts}">
+        <div>
+          <strong>${escapeHtml(d.name||'ไม่ระบุ')}</strong> — ${(+d.amount).toLocaleString()} THB
+          <span class="pill">${escapeHtml(d.channel)}</span>
+          <span class="pill" style="background:${isApproved?'#d4f4e2':'#ffeee8'};color:${isApproved?'#1a7a4a':'#c0392b'}">${isApproved?'✓ อนุมัติ':'รออนุมัติ'}</span>
+          <br><span class="muted">${new Date(+d.ts).toLocaleString()} · ${escapeHtml(d.note||'')}</span>
+        </div>
+        ${!isApproved ? `<button class="btn btn--sm" onclick="approveDonation(${d.ts})">✓ อนุมัติ</button>` : ''}
+      </div>`;
+    }).join('');
+}
+
+async function approveDonation(ts){
+  const r = await post({action:'admin_approve_donation', ts});
+  if (!r.ok){ alert('Error: '+(r.error||'unknown')); return; }
+  const item = DATA.donations.find(d=>+d.ts===+ts);
+  if (item) item.approved = true;
+  renderDonations();
 }
 
 // init — เช็คว่ามี token อยู่แล้วไหม

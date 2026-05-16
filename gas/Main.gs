@@ -26,7 +26,7 @@ function setup(){
   ensureSheet_(ss, SH.users, ['user_id','email','name','provider','fb_id','avatar','created_at','last_login']);
   ensureSheet_(ss, SH.sessions, ['token','user_id','created_at','expires_at']);
   ensureSheet_(ss, SH.orders, ['order_id','user_id','email','item_id','item_title','amount','currency','status','slip_url','created_at','paid_at','note']);
-  ensureSheet_(ss, SH.donations, ['ts','name','amount','channel','note']);
+  ensureSheet_(ss, SH.donations, ['ts','name','amount','channel','note','approved']);
   ensureSheet_(ss, SH.magic, ['token','email','created_at','expires_at','used']);
   ensureSheet_(ss, SH.courses, ['id','price','currency','title_vi','title_th','desc_vi','desc_th','active']);
   ensureSheet_(ss, SH.bookmarks, ['user_id','slug','created_at']);
@@ -103,7 +103,8 @@ function doPostBody_(b){
     if (a === 'order_create')     return json_(orderCreate_(b));
     if (a === 'order_slip')       return json_(orderSubmitSlip_(b));
     if (a === 'order_status')     return json_(adminOrderStatus_(b));
-    if (a === 'donate_log')       return json_(donateLog_(b));
+    if (a === 'donate_log')            return json_(donateLog_(b));
+    if (a === 'admin_approve_donation') return json_(donationApprove_(b));
     if (a === 'admin_login')      return json_(adminLogin_(b));
     if (a === 'admin_login_otp')  return json_(adminLoginOtp_(b));
     if (a === 'admin_google')     return json_(adminGoogleLogin_(b));
