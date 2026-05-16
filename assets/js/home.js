@@ -47,7 +47,7 @@
   const cats = [...new Set(posts.flatMap(p => p.categories))].sort();
   const filters = document.querySelector('[data-filters]');
   filters.innerHTML = `<a href="#" class="is-active" data-f="">${T.all||'All'}</a>` +
-    cats.map(c => `<a href="#" data-f="${c}">${c}</a>`).join('');
+    cats.map(c => `<a href="#" data-f="${c}">${window.tCat?window.tCat(c):c}</a>`).join('');
 
   const grid = document.querySelector('[data-posts]');
   const render = (filter) => {

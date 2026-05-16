@@ -22,5 +22,26 @@ window.YP_I18N_VI = {
   courses_page_intro: "Chọn hình thức học phù hợp với bạn",
   captcha_q: "Để xác nhận bạn không phải robot, hãy giải:",
   captcha_wrong: "Trả lời sai, vui lòng thử lại",
-  switch_lang: "TH"
+  switch_lang: "TH",
+  // หมวดหมู่ (key=ไทย ใน categories[]) → เวียดนาม
+  cats: {
+    "ทั้งหมด": "Tất cả",
+    "คำศัพท์": "Từ vựng",
+    "ไวยากรณ์": "Ngữ pháp",
+    "พื้นฐาน": "Cơ bản",
+    "ชีวิตประจำวัน": "Đời sống",
+    "การสนทนา": "Giao tiếp",
+    "บทสนทนา": "Hội thoại",
+    "ท่องเที่ยว": "Du lịch",
+    "ทักทาย": "Chào hỏi",
+    "ตัวเลข": "Số đếm",
+    "สี": "Màu sắc",
+    "วัน": "Ngày tháng",
+    "ครอบครัว": "Gia đình",
+    "ร่างกาย": "Cơ thể",
+    "การเดินทาง": "Di chuyển",
+    "สภาพอากาศ": "Thời tiết",
+    "อาหาร": "Ẩm thực",
+    "ประโยค": "Câu mẫu"
+  }
 };

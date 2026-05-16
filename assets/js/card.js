@@ -1,7 +1,8 @@
 // Post card renderer
 window.postCard = function(p) {
   const title = window.pickL(p, 'title');
-  const cats = (p.categories || []).map(c => `<span class="tag tag--${c}">${c}</span>`).join('');
+  const tc = window.tCat || (x=>x);
+  const cats = (p.categories || []).map(c => `<span class="tag tag--${c}">${tc(c)}</span>`).join('');
   const d = new Date(p.date);
   const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const dateStr = window.YP_LANG === 'th'

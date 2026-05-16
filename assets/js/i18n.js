@@ -45,6 +45,12 @@ window.YP_setOG = function(opts){
     return o[f+'_'+window.YP_LANG] ?? o[f+'_vi'] ?? o[f] ?? '';
   };
 
+  // แปลชื่อหมวด (ไทย→ภาษาปัจจุบัน) — ถ้าไม่มีใน map ให้คืนค่าเดิม
+  window.tCat = function(c){
+    const m = (window.YP_T && window.YP_T.cats) || {};
+    return m[c] || c;
+  };
+
   window.POSTS = (window.YP_POST_LIST || []).map(s => window.YP_POSTS && window.YP_POSTS[s]).filter(Boolean);
 
   document.documentElement.lang = window.YP_LANG;

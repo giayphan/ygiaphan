@@ -45,10 +45,11 @@
   const params = new URLSearchParams(location.search);
   const selected = params.get('c');
   const cats = [...new Set(posts.flatMap(p => p.categories))].sort();
+  const tc = window.tCat || (x=>x);
   document.querySelector('[data-cat-pills]').innerHTML =
     `<a href="category.html" class="${!selected?'is-active':''}">${T.all||'All'}</a>` +
-    cats.map(c => `<a href="category.html?c=${encodeURIComponent(c)}" class="${selected===c?'is-active':''}">${c}</a>`).join('');
-  document.querySelector('[data-cat-title]').textContent = selected ? (T.category_prefix||'')+selected : (T.category_all||'Categories');
+    cats.map(c => `<a href="category.html?c=${encodeURIComponent(c)}" class="${selected===c?'is-active':''}">${tc(c)}</a>`).join('');
+  document.querySelector('[data-cat-title]').textContent = selected ? (T.category_prefix||'')+tc(selected) : (T.category_all||'Categories');
   const list = selected ? posts.filter(p => p.categories.includes(selected)) : posts;
   document.querySelector('[data-cat-posts]').innerHTML = list.map(window.postCard).join('');
 })();
