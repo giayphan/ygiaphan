@@ -219,7 +219,17 @@
 
   <!-- COMMENTS -->
   <div class="panel" data-panel="comments">
-    <div class="toolbar"><button class="btn btn--ghost" id="c-reload">↻ Reload</button></div>
+    <div class="toolbar">
+      <button class="btn btn--ghost" id="c-reload">↻ Reload</button>
+      <select id="c-filter-status" style="padding:7px 10px;border:1px solid var(--ad-line);border-radius:8px;font:inherit;background:#fff;color:var(--ad-fg)">
+        <option value="">ทั้งหมด</option>
+        <option value="pending">รออนุมัติ</option>
+        <option value="approved">อนุมัติแล้ว</option>
+      </select>
+      <select id="c-filter-slug" style="padding:7px 10px;border:1px solid var(--ad-line);border-radius:8px;font:inherit;background:#fff;color:var(--ad-fg);max-width:200px">
+        <option value="">ทุก post</option>
+      </select>
+    </div>
     <div id="c-list"></div>
   </div>
 
@@ -565,22 +575,44 @@ $('#p-del').onclick = async () => {
 
 /* ===== Comments ===== */
 function renderComments(){
-  $('#c-list').innerHTML = (DATA.comments||[]).map(c => `
-    <div class="item yp-fade-in">
+  const statusFilter = $('#c-filter-status').value;
+  const slugFilter   = $('#c-filter-slug').value;
+
+  // populate slug dropdown (ทำครั้งเดียวหลังโหลดข้อมูล)
+  const slugSel = $('#c-filter-slug');
+  const slugs = [...new Set((DATA.comments||[]).map(c => c.slug))].sort();
+  const current = slugSel.value;
+  slugSel.innerHTML = '<option value="">ทุก post</option>' +
+    slugs.map(s => `<option value="${escapeHtml(s)}"${s===current?' selected':''}>${escapeHtml(s)}</option>`).join('');
+
+  const list = (DATA.comments||[]).filter(c => {
+    const isPending = String(c.approved).toLowerCase() === 'false';
+    if (statusFilter === 'pending'  && !isPending) return false;
+    if (statusFilter === 'approved' &&  isPending) return false;
+    if (slugFilter && c.slug !== slugFilter) return false;
+    return true;
+  });
+
+  $('#c-list').innerHTML = list.map(c => {
+    const isPending = String(c.approved).toLowerCase() === 'false';
+    return `<div class="item yp-fade-in">
       <div>
         <strong>${escapeHtml(c.name)}</strong>
         ${c.user_email ? `<span class="pill">✉️ ${escapeHtml(c.user_email)}</span>` : '<span class="pill pill--warn">guest</span>'}
         on <em>${escapeHtml(c.slug)}</em>
-        ${String(c.approved).toLowerCase()==='false' ? '<span class="pill pill--warn">รออนุมัติ</span>' : '<span class="pill pill--ok">ok</span>'}
+        ${isPending ? '<span class="pill pill--warn">รออนุมัติ</span>' : '<span class="pill pill--ok">ok</span>'}
         <br><span class="muted">${new Date(+c.ts).toLocaleString()}</span>
         <div style="margin-top:4px">${escapeHtml(c.msg)}</div>
       </div>
       <div style="display:flex;gap:4px;flex-direction:column">
-        ${String(c.approved).toLowerCase()==='false' ? `<button class="btn btn--sm" data-approve="${c.ts}">✓</button>` : ''}
+        ${isPending ? `<button class="btn btn--sm" data-approve="${c.ts}">✓</button>` : ''}
         <button class="btn btn--sm btn--danger" data-delc='${c.ts}|${escapeHtml(c.slug)}'>🗑</button>
       </div>
-    </div>`).join('') || '<p class="muted">ไม่มี comment</p>';
+    </div>`;
+  }).join('') || '<p class="muted">ไม่มี comment ที่ตรงเงื่อนไข</p>';
 }
+$('#c-filter-status').addEventListener('change', renderComments);
+$('#c-filter-slug').addEventListener('change', renderComments);
 $('#c-list').addEventListener('click', async e => {
   const ap = e.target.closest('[data-approve]');
   const dl = e.target.closest('[data-delc]');
