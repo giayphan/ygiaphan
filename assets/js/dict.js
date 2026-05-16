@@ -69,9 +69,31 @@
     });
   }
 
+  // ── loading overlay ──────────────────────────────────────
+  function showLoading(on){
+    const el = document.getElementById('dict-loading');
+    if (el) el.hidden = !on;
+  }
+
   // ── main init ─────────────────────────────────────────────
-  window.YP_DICT_INIT = function(){
-    const words = window.YP_DICT || [];
+  window.YP_DICT_INIT = async function(){
+    showLoading(true);
+    let words = [];
+    try {
+      if (window.YP_API && window.YP_API.on) {
+        const remote = await window.YP_API.loadDict();
+        if (Array.isArray(remote) && remote.length) {
+          words = remote.map(w => ({
+            ...w,
+            id: +w.id,
+            cat: String(w.cat||'').trim()
+          }));
+        }
+      }
+    } catch(e){ console.warn('dict API load failed', e); }
+    if (!words.length) words = window.YP_DICT || [];
+    window.YP_DICT = words;
+    showLoading(false);
     if (!words.length) return;
     const favs = getFavs();
 

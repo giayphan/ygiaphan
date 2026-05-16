@@ -53,6 +53,7 @@
     quizSubmit(slug, score, total){ return postJSON({action:'quiz_submit', token: window.YP_AUTH.token(), slug, score, total}); },
     leaderboard(days){ return postJSON({action:'leaderboard', days: days||30}); },
     thanksList(){ return getJSON(cfg.API_URL + '?action=thanks_list'); },
+    loadDict(){ return ON ? getJSON(cfg.API_URL + '?action=dict') : Promise.resolve(null); },
     upsertPost(key, post){ return postJSON({action:'post', key, ...post}); },
     deletePost(key, slug){ return postJSON({action:'delete', key, slug}); }
   };
