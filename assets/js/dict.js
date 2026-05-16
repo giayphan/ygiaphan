@@ -1,7 +1,22 @@
 // ygiaphan — Dictionary logic
 (function(){
-  const FAVKEY = 'yp:dict:fav';
-  const HISTKEY = 'yp:dict:hist';
+  const FAVKEY   = 'yp:dict:fav';
+  const HISTKEY  = 'yp:dict:hist';
+  const CACHEKEY = 'yp:dict:cache';
+  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
+
+  function loadCache(){
+    try {
+      const raw = localStorage.getItem(CACHEKEY);
+      if (!raw) return null;
+      const { ts, words } = JSON.parse(raw);
+      if (Date.now() - ts > CACHE_TTL) return null;
+      return words;
+    } catch { return null; }
+  }
+  function saveCache(words){
+    try { localStorage.setItem(CACHEKEY, JSON.stringify({ ts: Date.now(), words })); } catch {}
+  }
 
   // ── helpers ──────────────────────────────────────────────
   function getFavs(){ try{ return new Set(JSON.parse(localStorage.getItem(FAVKEY)||'[]')); }catch{ return new Set(); } }
@@ -77,27 +92,38 @@
 
   // ── main init ─────────────────────────────────────────────
   window.YP_DICT_INIT = async function(){
-    showLoading(true);
     let words = [];
-    try {
-      if (window.YP_API && window.YP_API.on) {
-        const timeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('dict timeout')), 5000)
-        );
-        const remote = await Promise.race([window.YP_API.loadDict(), timeout]);
-        if (Array.isArray(remote) && remote.length) {
-          words = remote.map(w => ({
-            ...w,
-            id: +w.id,
-            cat: String(w.cat||'').trim()
-          }));
+
+    // 1. try localStorage cache (24h)
+    const cached = loadCache();
+    if (cached && cached.length) {
+      words = cached;
+    } else {
+      // 2. fetch from GAS API with 5s timeout
+      showLoading(true);
+      try {
+        if (window.YP_API && window.YP_API.on) {
+          const timeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('dict timeout')), 5000)
+          );
+          const remote = await Promise.race([window.YP_API.loadDict(), timeout]);
+          if (Array.isArray(remote) && remote.length) {
+            words = remote.map(w => ({
+              ...w,
+              id: +w.id,
+              cat: String(w.cat||'').trim()
+            }));
+            saveCache(words);
+          }
         }
-      }
-    } catch(e){ console.warn('dict API load failed', e); }
-    if (!words.length) words = window.YP_DICT || [];
-    window.YP_DICT = words;
-    showLoading(false);
-    if (!words.length) return;
+      } catch(e){ console.warn('dict API load failed', e); }
+      showLoading(false);
+    }
+
+    if (!words.length){
+      showLoading(false);
+      return;
+    }
     const favs = getFavs();
 
     // Categories
