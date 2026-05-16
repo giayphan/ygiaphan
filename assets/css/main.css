@@ -524,3 +524,19 @@ pre,code{white-space:pre-wrap;word-break:break-word}
   .section__head h2{font-size:18px}
   .slide__title{font-size:20px}
 }
+
+/* ===== Comment tree mobile fix ===== */
+@media (max-width:720px){
+  .comment{padding:12px 12px}
+  .comment__replies{margin-left:14px;padding-left:10px}
+  /* deeper nests: flatten — stop indenting after 3 levels */
+  .comment__replies .comment__replies .comment__replies{
+    margin-left:6px;padding-left:8px;border-left-width:1px;
+  }
+  .comment__replies .comment__replies .comment__replies .comment__replies{
+    margin-left:0;padding-left:8px;border-left:0;
+  }
+  .comment__avatar{width:30px;height:30px}
+  .comment__reply-form{padding:10px}
+  .comment__reply-form > div{flex-wrap:wrap}
+}
