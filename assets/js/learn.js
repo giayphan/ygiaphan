@@ -14,23 +14,27 @@
     // Auto-extract vocab from markdown tables (when no ::: vocab block)
     if (!vocab.length){
       const lines = md.split('\n');
-      let inTable = false, isViTable = false, headerCols = [];
+      let inTable = false, dir = 0; // 0=none, 1=vi-first (col0=vi), 2=th-first (col0=th)
       for (let i = 0; i < lines.length; i++){
         const ln = lines[i].trim();
         if (ln.startsWith('|') && ln.endsWith('|')){
           const cells = ln.slice(1,-1).split('|').map(s => s.trim());
           if (!inTable){
-            inTable = true; headerCols = cells;
-            isViTable = /เวียดนาม|Việt|Tiếng Việt/i.test(cells[0]);
+            inTable = true;
+            if (/เวียดนาม|Việt|Tiếng Việt/i.test(cells[0])) dir = 1;
+            else if (/ภาษาไทย|Tiếng Thái|Thai/i.test(cells[0])) dir = 2;
+            else dir = 0;
             continue;
           }
-          if (/^[-:|\s]+$/.test(ln.replace(/\|/g,''))) continue; // separator row
-          if (isViTable && cells.length >= 2){
-            const vi = cells[0], th = cells[cells.length-1];
+          if (/^[-:|\s]+$/.test(ln.replace(/\|/g,''))) continue;
+          if (dir && cells.length >= 2){
+            const first = cells[0], last = cells[cells.length-1];
             const ph = cells.length >= 3 ? cells[1] : '';
+            const vi = dir === 1 ? first : last;
+            const th = dir === 1 ? last  : first;
             if (vi && th && vi !== th && !/^[-:\s]+$/.test(vi)) vocab.push({vi, th, ph});
           }
-        } else { inTable = false; isViTable = false; }
+        } else { inTable = false; dir = 0; }
       }
       if (vocab.length) md += '\n\nYP_VOCAB_SLOT';
     }
