@@ -104,8 +104,8 @@
     const btn = root.querySelector('#postTTS');
     const lbl = root.querySelector('#ttsLabel');
     if (!btn || !window.YP_TTS) return;
-    // target lang = opposite of UI (the language being learned in this post body)
-    const ttsLang = (window.YP_LANG||'vi') === 'th' ? 'vi' : 'th';
+    // default = UI lang (เป็นภาษาคำอธิบาย); chunks ที่มีตัวอักษรของอีกภาษาจะถูก detect รายประโยค
+    const ttsLang = window.YP_LANG||'vi';
     let playing = false, stop = null;
     const setLabel = txt => { if (lbl) lbl.textContent = txt; };
     btn.onclick = () => {

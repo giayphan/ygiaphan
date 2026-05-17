@@ -50,14 +50,23 @@
       curAudio.play().catch(fb);
     } catch(_){ speakLocal(text, l, onend); }
   }
-  // Read a long text in sentence chunks; returns a stop function
-  function speakChunks(text, lang){
+  // Read text in sentence chunks. Per-chunk language:
+  //   - if chunk has Vietnamese diacritics → vi
+  //   - if chunk has Thai chars → th
+  //   - otherwise → defaultLang (or UI lang)
+  function speakChunks(text, defaultLang){
     const parts = String(text||'').split(/(?<=[.!?。！？\n])\s+|—|;\s/).map(s=>s.trim()).filter(Boolean);
-    if (!parts.length){ speak(text, lang); return stop; }
+    if (!parts.length){ speak(text, defaultLang); return stop; }
+    const pickLang = chunk => {
+      if (/[ăâđêôơưàáảãạằắẳẵặầấẩẫậèéẻẽẹềếểễệìíỉĩịòóỏõọồốổỗộờớởỡợùúủũụừứửữựỳýỷỹỵ]/i.test(chunk)) return 'vi';
+      if (/[฀-๿]/.test(chunk)) return 'th';
+      return defaultLang || (window.YP_LANG||'vi');
+    };
     let i = 0, cancelled = false;
     const next = () => {
       if (cancelled || i >= parts.length){ if (typeof window.YP_TTS.onfinish==='function') window.YP_TTS.onfinish(); return; }
-      speak(parts[i++], lang, next);
+      const chunk = parts[i++];
+      speak(chunk, pickLang(chunk), next);
     };
     next();
     return () => { cancelled = true; stop(); };

@@ -13,7 +13,11 @@
 | Backend (GAS) | ✅ ทำงานได้ |
 | Auth (Magic Link, FB, Google) | ✅ ทำงานได้ |
 | PWA (manifest, sw.js) | ✅ ทำงานได้ |
-| Content (posts) | ✅ 7 posts (greetings, six-tones, ordering-food, numbers, days-of-week, colors, family) |
+| Content (posts) | ✅ 10 posts (greetings, six-tones, ordering-food, numbers, days-of-week, colors, family, body-parts, transportation, weather) |
+| Vocab SRS (full) | ✅ save/due/review/list/delete + phonetic + library view + box stats |
+| TTS (cross-platform) | ✅ `tts.js` Google Translate audio + browser fallback |
+| Lang direction (target/native) | ✅ flashcard/vocab card swap ตาม UI lang |
+| i18n coverage | ✅ nav/vocab/quiz/dict/donate/login/me/post ใช้ keys ครบ |
 | Config (production) | ✅ config.example.js + .gitignore อัปเดตแล้ว |
 | File structure | ✅ app.js แยกเป็น pwa/i18n/ui/card · Code.gs แยกตาม domain |
 | GitHub Actions | ✅ deploy-pages + ci + deploy-gas |
@@ -158,19 +162,43 @@ gas/
 
 ## Phase 5 — Content & UX
 
-### 5.1 เพิ่ม posts (ปัจจุบันมี 3)
-- [ ] เพิ่ม post: ตัวเลข 0-10 (ภาษาเวียดนาม)
-- [ ] เพิ่ม post: วันในสัปดาห์
-- [ ] เพิ่ม post: สีพื้นฐาน
-- [ ] เพิ่ม post: ครอบครัว (พ่อ แม่ พี่ น้อง)
-- [ ] เพิ่ม post: ภาษาไทยสำหรับชาวเวียดนาม (ชุดแรก)
-- [ ] เพิ่ม post: สระในภาษาไทยสำหรับชาวเวียดนาม
+### 5.1 เพิ่ม posts
+- [x] ตัวเลข 0-10
+- [x] วันในสัปดาห์
+- [x] สีพื้นฐาน
+- [x] ครอบครัว
+- [x] ร่างกาย, การเดินทาง, สภาพอากาศ
+- [ ] เพิ่ม `::: vocab` block ใน 9 posts ที่เหลือ (auto-extract จากตารางทำงานแล้ว แต่ ph อาจไม่ครบ)
+- [ ] ภาษาไทยสำหรับชาวเวียดนาม (ชุดแรก)
+- [ ] สระในภาษาไทยสำหรับชาวเวียดนาม
 
 ### 5.2 ปรับ UX
 - [ ] เพิ่ม `offline.html` — หน้า fallback เมื่อไม่มีเน็ต
 - [ ] เพิ่ม `404.html`
 - [ ] เพิ่ม `sitemap.xml`
-- [ ] ปรับ `robots.txt` ให้ระบุ sitemap
+- [x] ปรับ `robots.txt` — block /me.html, /data-deletion.html
+
+---
+
+## Phase 5.5 — Vocab/SRS/TTS (เพิ่งทำเสร็จ)
+
+- [x] Backend: `vocab_list`, `vocab_delete` + column `ph`
+- [x] vocabSave รับ ph + auto-add column ถ้าไม่มี + backfill
+- [x] vocabDue/Review: รองรับ Date object จาก Sheets + force number format
+- [x] me.html: Library view + box stats (สี 0-5) + 🔊 + 🗑 + keyboard (Space/1/2) + shuffle
+- [x] post.html: ปุ่ม 🔊 อ่านบทความ (skip code/table/vocab/quiz blocks, chunked sentences)
+- [x] `assets/js/tts.js` — shared Google Translate audio + browser fallback + onfinish callback
+- [x] กฎ target = opposite ของ UI lang ใน flashcard/vocab card/library/TTS
+- [x] dict.js normalize regex fix (`̀-ͯ` for VN diacritics)
+- [x] i18n: เพิ่ม ~80 keys ทั้ง th/vi + wire ใน ui/learn/dict/post/me/login/about/dictionary
+- [x] ทุก HTML ใช้ `<html>` ลอย → JS set lang runtime
+
+ที่ยังเหลือ:
+- [ ] TTS: ปุ่ม play/pause ในระหว่างอ่านบทความ (highlight ประโยคปัจจุบัน)
+- [ ] vocab: import จาก dict ★ → SRS (ปัจจุบันแยกระบบ)
+- [ ] vocab: 2-way recall (สลับ target ↔ native ทุก review)
+- [ ] vocab: undo จริง (ตอนนี้ refresh page)
+- [ ] admin.html: i18n (low priority, admin-only)
 
 ---
 

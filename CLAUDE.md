@@ -42,6 +42,7 @@ content/config.js                  gas/lib/SheetRepo.gs
 | `dict.js` | dictionary page — load + filter |
 | `i18n.js` | `window.YP_I18N` — translate(), detectLocale() |
 | `pwa.js` | SW register, install prompt, update toast |
+| `tts.js` | `window.YP_TTS` — speak/speakChunks/stop (Google Translate audio + browser TTS fallback) |
 | `marked.min.js` | Markdown renderer (vendor, อย่าแก้) |
 
 ### Frontend — Config & Content
@@ -114,7 +115,7 @@ donations      ts · name · amount · channel · note
 magic_tokens   token · email · created_at · expires_at · used
 courses        id · price · currency · title_vi/th · desc_vi/th · active
 bookmarks      user_id · slug · created_at
-user_vocab     user_id · vi · th · slug · box · due_at · created_at
+user_vocab     user_id · vi · th · slug · box · due_at · created_at · ph
 quiz_log       user_id · slug · score · total · ts
 dictionary     id · vi · th · pv · pt · cat · ex_vi · ex_th
 admin_sessions token · fingerprint · created_at · expires_at · last_seen
@@ -147,7 +148,7 @@ admin_fails    ts · fingerprint · reason
 | `fb_login` / `google_login` | no |
 | `admin_login` / `admin_login_otp` | no |
 | `bookmark_toggle` / `bookmark_list` | yes |
-| `vocab_save` / `vocab_due` / `vocab_review` | yes |
+| `vocab_save` / `vocab_due` / `vocab_review` / `vocab_list` / `vocab_delete` | yes |
 | `quiz_submit` / `leaderboard` | yes |
 | `order_create` / `order_slip` / `my_orders` | yes |
 | `donate_log` | no |
@@ -164,7 +165,16 @@ admin_fails    ts · fingerprint · reason
 - **Public post fields:** กำหนดใน `Constants.gs → PUBLIC_POST_FIELDS` (กัน column ลับหลุด)
 - **Secrets:** ทุกอย่างใน GAS ใช้ `PropertiesService.getScriptProperties()` ไม่ hardcode
 - **Deploy GAS:** ต้อง "New version" ทุกครั้ง — ไม่งั้น Web app ยังใช้โค้ดเก่า
-- **i18n:** `YP_I18N.t('key')` ดึงจาก `content/i18n/th.js` หรือ `vi.js` ตาม locale
+- **i18n:** `window.YP_T['key']` (load จาก `content/i18n/th.js` หรือ `vi.js` ตาม `YP_LANG`)
+- **Target/Native lang rule:** UI lang = ภาษาแม่ของผู้ใช้ (รู้แล้ว). **Target language = ตรงข้ามกับ UI lang** (กำลังเรียน).
+  - VI UI → user เวียดนามเรียนไทย → target=th
+  - TH UI → user ไทยเรียนเวียดนาม → target=vi
+  - vocab card / flashcard: ด้านหน้า = target (โจทย์), ด้านหลัง = native (เฉลย)
+  - TTS: พูด target ด้วย voice ของ target lang
+  - field `ph` = phonetic ของ target เสมอ
+  - ฐานข้อมูล `vi`/`th` = ภาษา literal (ไม่ใช่ role) — swap role ตอน render ตาม `YP_LANG`
+- **TTS:** ใช้ `window.YP_TTS.speak(text, lang)` หรือ `speakChunks()` — ดึง MP3 จาก Google Translate (เสียงเดียวกันทุก platform) fallback เป็น browser TTS ถ้า offline/fail
+- **`<html lang>`:** ทุก page เป็น `<html>` ลอย → JS set `document.documentElement.lang = window.YP_LANG` runtime
 
 ---
 

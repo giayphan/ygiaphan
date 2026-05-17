@@ -62,8 +62,18 @@ assets/js/api.js         ← API client
 ## หน้าใหม่ที่เพิ่ม
 
 - `/admin.html` — จัดการ posts, comments, orders, users, donations
-- `/login.html` — สมัคร/เข้าสู่ระบบ (Magic Link + Facebook)
-- `/about.html` — มี donate section แล้ว
+- `/login.html` — สมัคร/เข้าสู่ระบบ (Magic Link + Facebook + Google)
+- `/about.html` — donate section (PromptPay 🇹🇭 + MoMo 🇻🇳 + VietQR 🇻🇳 + PayPal 🌐)
+- `/me.html` — โปรไฟล์ + Bookmarks + Orders + 🎴 ทบทวนศัพท์ (SRS Leitner 6 กล่อง + คลังศัพท์)
+- `/dictionary.html` — พจนานุกรม ไทย↔เวียดนาม + flashcard mode
+
+## Features
+
+- **🌐 Bilingual UI** — สลับ VI/TH ได้ทันที (target language = ตรงข้ามกับ UI lang)
+- **🎴 SRS Vocab Review** — Leitner 6 กล่อง, save จาก post, library view, keyboard shortcuts
+- **🔊 Cross-platform TTS** — เสียงเดียวกันทุก platform (Google Translate audio) + fallback browser TTS
+- **📚 อ่านบทความออกเสียง** — ปุ่ม 🔊 ในแต่ละ post อ่านทีละประโยค
+- **📱 PWA** — ติดตั้งบนมือถือได้, offline support
 
 ## ตั้งค่า Facebook Login (optional)
 
