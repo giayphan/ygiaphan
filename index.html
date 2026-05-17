@@ -90,10 +90,8 @@
       agg[k].total += (+d.amount||0);
     }
     const rows = Object.values(agg).sort((a,b)=>b.total-a.total);
-    const items = rows.map(d => `<span class="supporters-ticker__item"><b>${d.name}</b> · ${d.total.toLocaleString()}฿</span>`).join('<span class="supporters-ticker__sep">•</span>');
-    // duplicate for seamless loop
-    wrap.innerHTML = items + '<span class="supporters-ticker__sep">•</span>' + items;
-    wrap.style.setProperty('--ticker-count', rows.length);
+    const items = rows.map(d => `<span class="supporters-ticker__item">💚 <b>${d.name}</b> <em>${d.total.toLocaleString()}฿</em></span>`).join('');
+    wrap.innerHTML = items + items; // duplicate for seamless loop
     sec.style.display = '';
   } catch(e){ console.warn('[supporters] failed', e); }
 })();

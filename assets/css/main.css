@@ -467,8 +467,8 @@ body.is-offline::before{content:"📵 ออฟไลน์ — บางคุ�
 /* Mobile */
 @media(max-width:720px){
   .nav-toggle{display:flex;align-items:center;justify-content:center}
-  .nav{display:none !important;position:fixed;top:72px;left:10px;right:10px;background:#fff;border:2px solid var(--pink-soft);border-radius:var(--radius);flex-direction:column;align-items:stretch;padding:10px;gap:2px;box-shadow:var(--shadow);z-index:60;max-height:calc(100vh - 88px);overflow-y:auto}
-  .nav.is-open{display:flex !important}
+  .nav{position:fixed !important;top:72px;left:10px;right:10px;width:auto;height:0;visibility:hidden;opacity:0;background:#fff;border:2px solid var(--pink-soft);border-radius:var(--radius);display:flex;flex-direction:column;align-items:stretch;padding:0 10px;gap:2px;box-shadow:var(--shadow);z-index:60;max-height:calc(100vh - 88px);overflow:hidden;transition:opacity .15s}
+  .nav.is-open{height:auto;visibility:visible;opacity:1;padding:10px;overflow-y:auto}
   .nav__link{padding:10px 14px;text-align:left;border-radius:var(--radius-sm)}
   .nav__menu{position:static;display:flex;border:0;padding:0 0 0 14px;box-shadow:none;margin:0}
   .slide{flex-direction:column;text-align:center;padding:30px 20px 46px}
@@ -481,11 +481,11 @@ body.is-offline::before{content:"📵 ออฟไลน์ — บางคุ�
 .supporters-ticker{display:flex;align-items:center;gap:10px;margin:14px 0 4px;padding:8px 14px;background:var(--brand-bg);border:1px dashed var(--green-soft);border-radius:99px;font-size:.88em;overflow:hidden}
 .supporters-ticker__label{font-weight:600;color:var(--brand);white-space:nowrap;flex-shrink:0}
 .supporters-ticker__viewport{flex:1;overflow:hidden;mask-image:linear-gradient(90deg,transparent 0,#000 24px,#000 calc(100% - 24px),transparent 100%)}
-.supporters-ticker__track{display:inline-flex;gap:14px;white-space:nowrap;animation:yp-ticker 30s linear infinite;will-change:transform}
+.supporters-ticker__track{display:inline-flex;gap:24px;white-space:nowrap;animation:yp-ticker 40s linear infinite;will-change:transform}
 .supporters-ticker:hover .supporters-ticker__track{animation-play-state:paused}
-.supporters-ticker__item{color:var(--fg)}
-.supporters-ticker__item b{color:var(--brand);font-weight:600;margin-right:4px}
-.supporters-ticker__sep{color:var(--muted);opacity:.5}
+.supporters-ticker__item{color:var(--fg);display:inline-flex;align-items:center;gap:6px}
+.supporters-ticker__item b{color:var(--brand);font-weight:600}
+.supporters-ticker__item em{color:var(--muted);font-style:normal;font-size:.9em}
 .supporters-ticker__cta{color:var(--brand);font-weight:600;white-space:nowrap;flex-shrink:0;font-size:.95em}
 @keyframes yp-ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media(max-width:520px){
