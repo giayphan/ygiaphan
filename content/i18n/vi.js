@@ -70,8 +70,6 @@ window.YP_I18N_VI = {
   reply: "Trả lời",
   too_fast: "Chậm thôi",
   members_only_teaser: "Nội dung này chỉ dành cho thành viên",
-  read_aloud: "Đọc to",
-  tts_stop: "⏹ Dừng",
   // dict
   dict_fav_on: "Bỏ lưu",
   dict_fav_off: "Lưu từ",

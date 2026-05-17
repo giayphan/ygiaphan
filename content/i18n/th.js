@@ -70,8 +70,6 @@ window.YP_I18N_TH = {
   reply: "ตอบกลับ",
   too_fast: "ช้าๆ หน่อย",
   members_only_teaser: "เนื้อหานี้สำหรับสมาชิกเท่านั้น",
-  read_aloud: "อ่านให้ฟัง",
-  tts_stop: "⏹ หยุด",
   // dict
   dict_fav_on: "ยกเลิกบันทึก",
   dict_fav_off: "บันทึกคำ",

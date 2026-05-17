@@ -71,8 +71,6 @@ assets/js/api.js         ← API client
 
 - **🌐 Bilingual UI** — สลับ VI/TH ได้ทันที (target language = ตรงข้ามกับ UI lang)
 - **🎴 SRS Vocab Review** — Leitner 6 กล่อง, save จาก post, library view, keyboard shortcuts
-- **🔊 Cross-platform TTS** — เสียงเดียวกันทุก platform (Google Translate audio) + fallback browser TTS
-- **📚 อ่านบทความออกเสียง** — ปุ่ม 🔊 ในแต่ละ post อ่านทีละประโยค
 - **📱 PWA** — ติดตั้งบนมือถือได้, offline support
 
 ## ตั้งค่า Facebook Login (optional)

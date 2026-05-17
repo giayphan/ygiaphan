@@ -15,7 +15,6 @@
 | PWA (manifest, sw.js) | ✅ ทำงานได้ |
 | Content (posts) | ✅ 10 posts (greetings, six-tones, ordering-food, numbers, days-of-week, colors, family, body-parts, transportation, weather) |
 | Vocab SRS (full) | ✅ save/due/review/list/delete + phonetic + library view + box stats |
-| TTS (cross-platform) | ✅ `tts.js` Google Translate audio + browser fallback |
 | Lang direction (target/native) | ✅ flashcard/vocab card swap ตาม UI lang |
 | i18n coverage | ✅ nav/vocab/quiz/dict/donate/login/me/post ใช้ keys ครบ |
 | Config (production) | ✅ config.example.js + .gitignore อัปเดตแล้ว |
@@ -180,21 +179,18 @@ gas/
 
 ---
 
-## Phase 5.5 — Vocab/SRS/TTS (เพิ่งทำเสร็จ)
+## Phase 5.5 — Vocab/SRS (เพิ่งทำเสร็จ)
 
 - [x] Backend: `vocab_list`, `vocab_delete` + column `ph`
 - [x] vocabSave รับ ph + auto-add column ถ้าไม่มี + backfill
 - [x] vocabDue/Review: รองรับ Date object จาก Sheets + force number format
-- [x] me.html: Library view + box stats (สี 0-5) + 🔊 + 🗑 + keyboard (Space/1/2) + shuffle
-- [x] post.html: ปุ่ม 🔊 อ่านบทความ (skip code/table/vocab/quiz blocks, chunked sentences)
-- [x] `assets/js/tts.js` — shared Google Translate audio + browser fallback + onfinish callback
-- [x] กฎ target = opposite ของ UI lang ใน flashcard/vocab card/library/TTS
+- [x] me.html: Library view + box stats (สี 0-5) + 🗑 + keyboard (Space/1/2) + shuffle
+- [x] กฎ target = opposite ของ UI lang ใน flashcard/vocab card/library
 - [x] dict.js normalize regex fix (`̀-ͯ` for VN diacritics)
 - [x] i18n: เพิ่ม ~80 keys ทั้ง th/vi + wire ใน ui/learn/dict/post/me/login/about/dictionary
 - [x] ทุก HTML ใช้ `<html>` ลอย → JS set lang runtime
 
 ที่ยังเหลือ:
-- [ ] TTS: ปุ่ม play/pause ในระหว่างอ่านบทความ (highlight ประโยคปัจจุบัน)
 - [ ] vocab: import จาก dict ★ → SRS (ปัจจุบันแยกระบบ)
 - [ ] vocab: 2-way recall (สลับ target ↔ native ทุก review)
 - [ ] vocab: undo จริง (ตอนนี้ refresh page)

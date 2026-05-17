@@ -76,7 +76,6 @@
 <script src="assets/js/api.js"></script>
 <script src="assets/js/ui.js"></script>
 <script src="assets/js/card.js"></script>
-<script src="assets/js/tts.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const T = window.YP_T || {};
@@ -145,7 +144,6 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
   // Vocab review (Flashcard) + Library
   const vEl = $('#tab-vocab');
   const esc = s => String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const speak = (text, lang) => window.YP_TTS && window.YP_TTS.speak(text, lang);
   let kbHandler = null;
   function unbindKb(){ if (kbHandler) document.removeEventListener('keydown', kbHandler); kbHandler = null; }
 
@@ -175,16 +173,13 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
       }
       const v = items[i]; flipped = false;
       const uiLang = window.YP_LANG||'vi';
-      // target = opposite of UI lang; SRS stores ph as phonetic-of-target
       const front = uiLang==='th' ? v.vi : v.th;
       const back  = uiLang==='th' ? v.th : v.vi;
-      const targetLang = uiLang==='th' ? 'vi' : 'th';
       const frontClass = uiLang==='th' ? 'vn' : '';
       vEl.innerHTML = `
         <div class="flashcard-progress">${T.card_n_of||'Card'} ${i+1} / ${items.length} · ${T.box||'Box'} ${v.box}
           ${lastAction?` · <a href="javascript:void(0)" id="fundo">↶ ${T.undo||'Undo'}</a>`:''}</div>
         <div class="flashcard" id="fcard">
-          <button class="flashcard__tts" id="ftts" title="🔊" aria-label="🔊">🔊</button>
           <div class="flashcard__front ${frontClass}">${esc(front)}</div>
           <div class="flashcard__back" hidden>
             ${v.ph?`<div class="flashcard__ph">${esc(v.ph)}</div>`:''}
@@ -203,10 +198,8 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
         $('#fcard').querySelector('.flashcard__back').hidden = false;
         $('#fcard').querySelector('.flashcard__hint').textContent = (T.remember_q||'Remember?')+' (1/2)';
         $('#fact').hidden = false;
-        speak(front, targetLang);
       };
-      $('#fcard').onclick = e => { if (!e.target.closest('.flashcard__tts')) flip(); };
-      $('#ftts').onclick = e => { e.stopPropagation(); speak(front, targetLang); };
+      $('#fcard').onclick = flip;
       const review = async ok => {
         lastAction = {vi:v.vi, prevBox:v.box};
         await window.YP_API.vocabReview(v.vi, ok);
@@ -242,20 +235,18 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
     const s = r.stats;
     const boxes = s.byBox.map((n,i) => `<span class="vbox vbox--${i}">${T.box||'Box'} ${i}: <b>${n}</b></span>`).join('');
     const uiLang = window.YP_LANG||'vi';
-    const targetLang = uiLang==='th' ? 'vi' : 'th';
     const targetClass = uiLang==='th' ? 'vn' : '';
     const rows = r.items.slice().sort((a,b)=>a.box-b.box).map(v => {
       const target = uiLang==='th' ? v.vi : v.th;
       const native = uiLang==='th' ? v.th : v.vi;
       return `
-      <div class="vlib-row" data-vi="${esc(v.vi)}" data-target="${esc(target)}" data-lang="${targetLang}">
+      <div class="vlib-row" data-vi="${esc(v.vi)}">
         <span class="vlib-box vbox--${v.box}">${v.box}</span>
         <div class="vlib-text">
           <strong class="${targetClass}">${esc(target)}</strong>
           ${v.ph?`<span class="muted"> · ${esc(v.ph)}</span>`:''}
           <div class="muted" style="font-size:.85em">${esc(native)}</div>
         </div>
-        <button class="vlib-tts" title="ฟัง" aria-label="ฟัง">🔊</button>
         <button class="vlib-del" title="ลบ" aria-label="ลบ">🗑</button>
       </div>`;
     }).join('');
@@ -267,10 +258,6 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
       <div style="margin:10px 0;text-align:center"><button class="btn btn--ghost" id="vback">${T.back_to_review||'← Back'}</button></div>
       <div class="vlib">${rows || '<div class="me-empty">'+(T.vocab_empty||'Empty')+'</div>'}</div>`;
     $('#vback').onclick = renderVocab;
-    vEl.querySelectorAll('.vlib-tts').forEach(b => b.onclick = () => {
-      const row = b.closest('.vlib-row');
-      speak(row.dataset.target, row.dataset.lang);
-    });
     vEl.querySelectorAll('.vlib-del').forEach(b => b.onclick = async () => {
       const row = b.closest('.vlib-row');
       if (!confirm((T.confirm_delete||'Delete?')+' "'+row.dataset.vi+'"')) return;

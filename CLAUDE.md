@@ -42,7 +42,6 @@ content/config.js                  gas/lib/SheetRepo.gs
 | `dict.js` | dictionary page — load + filter |
 | `i18n.js` | `window.YP_I18N` — translate(), detectLocale() |
 | `pwa.js` | SW register, install prompt, update toast |
-| `tts.js` | `window.YP_TTS` — speak/speakChunks/stop (Google Translate audio + browser TTS fallback) |
 | `marked.min.js` | Markdown renderer (vendor, อย่าแก้) |
 
 ### Frontend — Config & Content
@@ -170,10 +169,8 @@ admin_fails    ts · fingerprint · reason
   - VI UI → user เวียดนามเรียนไทย → target=th
   - TH UI → user ไทยเรียนเวียดนาม → target=vi
   - vocab card / flashcard: ด้านหน้า = target (โจทย์), ด้านหลัง = native (เฉลย)
-  - TTS: พูด target ด้วย voice ของ target lang
   - field `ph` = phonetic ของ target เสมอ
   - ฐานข้อมูล `vi`/`th` = ภาษา literal (ไม่ใช่ role) — swap role ตอน render ตาม `YP_LANG`
-- **TTS:** ใช้ `window.YP_TTS.speak(text, lang)` หรือ `speakChunks()` — ดึง MP3 จาก Google Translate (เสียงเดียวกันทุก platform) fallback เป็น browser TTS ถ้า offline/fail
 - **`<html lang>`:** ทุก page เป็น `<html>` ลอย → JS set `document.documentElement.lang = window.YP_LANG` runtime
 
 ---
