@@ -91,8 +91,19 @@
     }
     const rows = Object.values(agg).sort((a,b)=>b.total-a.total);
     const items = rows.map(d => `<span class="supporters-ticker__item">💚 <b>${d.name}</b> <em>${d.total.toLocaleString()}฿</em></span>`).join('');
-    wrap.innerHTML = items + items; // duplicate for seamless loop
+    // repeat until track > 2x viewport for seamless loop
     sec.style.display = '';
+    wrap.innerHTML = items;
+    requestAnimationFrame(() => {
+      const vp = wrap.parentElement.clientWidth;
+      const oneSet = wrap.scrollWidth;
+      let reps = Math.max(2, Math.ceil((vp * 2) / oneSet));
+      let html = ''; for (let i=0;i<reps;i++) html += items;
+      wrap.innerHTML = html;
+      // animate by exactly one set width so loop is seamless
+      wrap.style.setProperty('--ticker-shift', oneSet + 'px');
+      wrap.style.setProperty('--ticker-dur', Math.max(20, oneSet/40) + 's');
+    });
   } catch(e){ console.warn('[supporters] failed', e); }
 })();
 </script>

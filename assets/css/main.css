@@ -481,16 +481,18 @@ body.is-offline::before{content:"📵 ออฟไลน์ — บางคุ�
 .supporters-ticker{display:flex;align-items:center;gap:10px;margin:14px 0 4px;padding:8px 14px;background:var(--brand-bg);border:1px dashed var(--green-soft);border-radius:99px;font-size:.88em;overflow:hidden}
 .supporters-ticker__label{font-weight:600;color:var(--brand);white-space:nowrap;flex-shrink:0}
 .supporters-ticker__viewport{flex:1;overflow:hidden;mask-image:linear-gradient(90deg,transparent 0,#000 24px,#000 calc(100% - 24px),transparent 100%)}
-.supporters-ticker__track{display:inline-flex;gap:24px;white-space:nowrap;animation:yp-ticker 40s linear infinite;will-change:transform}
+.supporters-ticker__track{display:inline-flex;gap:24px;white-space:nowrap;animation:yp-ticker var(--ticker-dur,40s) linear infinite;will-change:transform}
 .supporters-ticker:hover .supporters-ticker__track{animation-play-state:paused}
 .supporters-ticker__item{color:var(--fg);display:inline-flex;align-items:center;gap:6px}
 .supporters-ticker__item b{color:var(--brand);font-weight:600}
 .supporters-ticker__item em{color:var(--muted);font-style:normal;font-size:.9em}
 .supporters-ticker__cta{color:var(--brand);font-weight:600;white-space:nowrap;flex-shrink:0;font-size:.95em}
-@keyframes yp-ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes yp-ticker{from{transform:translateX(0)}to{transform:translateX(calc(-1 * var(--ticker-shift,50%)))}}
 @media(max-width:520px){
-  .supporters-ticker{flex-wrap:wrap;border-radius:14px;padding:8px 12px;gap:6px;font-size:.82em}
-  .supporters-ticker__viewport{order:3;flex-basis:100%}
+  .supporters-ticker{padding:6px 12px;gap:8px;font-size:.8em}
+  .supporters-ticker__label{font-size:0;gap:0}
+  .supporters-ticker__label::before{content:"💚";font-size:14px}
+  .supporters-ticker__cta{font-size:.85em}
 }
 
 /* ===== Thanks / Supporters ===== */
