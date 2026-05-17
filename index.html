@@ -14,6 +14,14 @@
 
   <section class="slider" data-slider></section>
 
+  <aside id="supporters-section" class="supporters-ticker" style="display:none" aria-label="ผู้สนับสนุน">
+    <span class="supporters-ticker__label">💚 ขอบคุณผู้สนับสนุน</span>
+    <div class="supporters-ticker__viewport">
+      <div class="supporters-ticker__track" id="supporters-wrap"></div>
+    </div>
+    <a class="supporters-ticker__cta" href="about.html#donate">ร่วมสนับสนุน →</a>
+  </aside>
+
   <section class="section" id="daily" data-section-daily>
     <div class="section__head">
       <h2></h2>
@@ -28,9 +36,6 @@
     <div class="grid grid--3" data-courses></div>
   </section>
 
-  <section id="supporters-section" class="supporters" style="display:none">
-    <div id="supporters-wrap"></div>
-  </section>
 
 </main>
 
@@ -85,14 +90,10 @@
       agg[k].total += (+d.amount||0);
     }
     const rows = Object.values(agg).sort((a,b)=>b.total-a.total);
-    wrap.innerHTML = `
-      <h3>💚 ขอบคุณผู้สนับสนุน <span class="supporters__count">${rows.length} ท่าน</span></h3>
-      <ul class="supporters__list">${rows.map(d => `
-        <li class="supporters__row">
-          <span class="supporters__name">${d.name}</span>
-          <span class="supporters__meta">×${d.count} · ${d.total.toLocaleString()} ฿</span>
-        </li>`).join('')}</ul>
-      <a class="supporters__cta" href="about.html#donate">ร่วมสนับสนุน →</a>`;
+    const items = rows.map(d => `<span class="supporters-ticker__item"><b>${d.name}</b> · ${d.total.toLocaleString()}฿</span>`).join('<span class="supporters-ticker__sep">•</span>');
+    // duplicate for seamless loop
+    wrap.innerHTML = items + '<span class="supporters-ticker__sep">•</span>' + items;
+    wrap.style.setProperty('--ticker-count', rows.length);
     sec.style.display = '';
   } catch(e){ console.warn('[supporters] failed', e); }
 })();
