@@ -285,16 +285,17 @@ a:hover{color:var(--brand);text-decoration:none}
 .comment__reply-badge strong{font-weight:600}
 
 /* Vocab block */
-.vocab-block{background:var(--brand-bg);border-radius:16px;padding:20px;margin:24px 0}
-.vocab-block h3{margin:0 0 12px;color:var(--brand)}
-.vocab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:10px}
-.vocab-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;position:relative;transition:transform .15s,box-shadow .15s}
-.vocab-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(45,138,78,.15)}
-.vocab-card__vi{font-weight:700;font-size:1.1rem;color:var(--brand)}
-.vocab-card__th{color:var(--muted);margin-top:4px;font-size:.95rem}
-.vocab-card__save{margin-top:8px;background:none;border:1px solid var(--brand);color:var(--brand);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:600}
+.vocab-block{background:var(--brand-bg);border-radius:12px;padding:12px 14px;margin:20px 0}
+.vocab-block h3{margin:0 0 8px;color:var(--brand);font-size:.95rem}
+.vocab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-bottom:6px}
+.vocab-card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 8px 6px 28px;position:relative;display:flex;flex-direction:column;gap:0;transition:border-color .15s}
+.vocab-card:hover{border-color:var(--brand)}
+.vocab-card__vi{font-weight:600;font-size:.92rem;color:var(--brand);line-height:1.25}
+.vocab-card__th{color:var(--muted);font-size:.8rem;line-height:1.25}
+.vocab-card__save{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:18px;height:18px;padding:0;background:none;border:1px solid var(--brand);color:var(--brand);border-radius:50%;cursor:pointer;font-size:.7rem;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center}
 .vocab-card__save:hover{background:var(--brand);color:#fff}
-.vocab-card__save:disabled{opacity:.6;cursor:default}
+.vocab-card__save:disabled{opacity:.7;cursor:default;border-color:#9ca3af;color:#9ca3af}
+.vocab-card__save.is-saved{background:var(--brand);color:#fff;border-color:var(--brand)}
 
 /* Quiz block */
 .quiz-block{background:#fffaeb;border:2px solid #ffe49c;border-radius:16px;padding:20px;margin:24px 0}

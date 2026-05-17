@@ -61,7 +61,7 @@
           <div class="vocab-card" data-vi="${escapeAttr(v.vi)}" data-th="${escapeAttr(v.th)}">
             <div class="vocab-card__vi vn">${escapeHtml(v.vi)}</div>
             <div class="vocab-card__th">${escapeHtml(v.th)}</div>
-            ${isLogin ? `<button class="vocab-card__save" title="บันทึกศัพท์">+ บันทึก</button>` : ''}
+            ${isLogin ? `<button class="vocab-card__save" title="บันทึกศัพท์" aria-label="บันทึก">+</button>` : ''}
           </div>`).join('')}
       </div>
       ${isLogin ? `<p class="muted" style="text-align:center;font-size:.85em">💡 บันทึกแล้ว → ทบทวนที่ <a href="me.html#vocab">โปรไฟล์</a></p>` : `<p class="muted" style="text-align:center;font-size:.85em">🔒 <a href="login.html">เข้าสู่ระบบ</a> เพื่อบันทึกและทบทวนศัพท์</p>`}
@@ -74,7 +74,8 @@
         const card = btn.closest('.vocab-card');
         btn.disabled = true;
         const r = await window.YP_API.vocabSave(card.dataset.vi, card.dataset.th, slug);
-        btn.textContent = r.ok ? (r.dup?'✓ มีอยู่แล้ว':'✓ บันทึก') : '✗ '+r.error;
+        if (r.ok){ btn.textContent='✓'; btn.classList.add('is-saved'); btn.title = r.dup?'มีอยู่แล้ว':'บันทึกแล้ว'; }
+        else { btn.textContent='!'; btn.title='ผิดพลาด: '+r.error; }
       };
     });
   };

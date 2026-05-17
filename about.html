@@ -26,11 +26,20 @@
         <summary>แจ้งการโอน (เพื่อ tag ขอบคุณบนเว็บ)</summary>
         <form id="donateForm">
           <input name="name" placeholder="ชื่อ (จะแสดงในรายชื่อขอบคุณ)" maxlength="50">
-          <input name="amount" type="number" placeholder="จำนวน (THB)" required min="1">
+          <div style="display:flex;gap:8px">
+            <input name="amount" type="number" placeholder="จำนวน" required min="1" style="flex:1">
+            <select name="currency" style="width:90px">
+              <option value="THB">THB ฿</option>
+              <option value="VND">VND ₫</option>
+              <option value="USD">USD $</option>
+            </select>
+          </div>
           <select name="channel" required>
-            <option value="">— ช่องทาง —</option>
-            <option value="promptpay">PromptPay</option>
-            <option value="paypal">PayPal</option>
+            <option value="">— ช่องทาง / Channel —</option>
+            <option value="promptpay">PromptPay 🇹🇭</option>
+            <option value="momo">MoMo 🇻🇳</option>
+            <option value="vietqr">VietQR / Bank 🇻🇳</option>
+            <option value="paypal">PayPal 🌐</option>
           </select>
           <textarea name="note" placeholder="ข้อความถึงผู้สร้าง (optional)" maxlength="500"></textarea>
           <button class="btn btn--primary" type="submit">ส่งการแจ้งโอน</button>
@@ -78,14 +87,27 @@ document.querySelectorAll('[data-content] p').forEach(p => p.hidden = (window.YP
 // donate grid
 const D = (window.YP_CONFIG||{}).DONATE||{};
 const items = [];
+const copyCode = (val,label) => `<code title="คลิกเพื่อ copy" onclick="navigator.clipboard.writeText('${val}');this.textContent='✓ คัดลอกแล้ว';setTimeout(()=>this.textContent='${val}',1500)">${label||val}</code>`;
 if (D.promptpay) items.push(`<div class="donate__item">
   <strong>PromptPay 🇹🇭</strong>
   ${D.promptpay_qr ? `<img src="${D.promptpay_qr}" alt="PromptPay QR">` : ''}
-  <code title="คลิกเพื่อ copy" onclick="navigator.clipboard.writeText('${D.promptpay}');this.textContent='✓ คัดลอกแล้ว';setTimeout(()=>this.textContent='${D.promptpay}',1500)">${D.promptpay}</code>
+  ${copyCode(D.promptpay)}
+</div>`);
+if (D.momo) items.push(`<div class="donate__item">
+  <strong>MoMo 🇻🇳</strong>
+  ${D.momo_qr ? `<img src="${D.momo_qr}" alt="MoMo QR">` : ''}
+  ${copyCode(D.momo)}
+  <p class="muted" style="margin:6px 0 0;font-size:.8em">Ví điện tử</p>
+</div>`);
+if (D.vietqr) items.push(`<div class="donate__item">
+  <strong>VietQR 🇻🇳</strong>
+  ${D.vietqr_qr ? `<img src="${D.vietqr_qr}" alt="VietQR">` : ''}
+  ${copyCode(D.vietqr)}
+  ${D.vietqr_bank ? `<p class="muted" style="margin:6px 0 0;font-size:.8em">${D.vietqr_bank}</p>` : ''}
 </div>`);
 if (D.paypal) items.push(`<div class="donate__item">
   <strong>PayPal 🌐</strong>
-  <p class="muted" style="margin:8px 0">รับเป็น USD</p>
+  <p class="muted" style="margin:8px 0">USD · International</p>
   <a href="${D.paypal}" target="_blank" rel="noopener">เปิด PayPal →</a>
 </div>`);
 document.getElementById('donateGrid').innerHTML = items.join('') || '<p class="muted">ยังไม่ได้ตั้งค่า donate</p>';
@@ -111,7 +133,8 @@ document.getElementById('donateForm').addEventListener('submit', async e => {
   const btn = f.querySelector('button');
   btn.disabled = true; btn.innerHTML = '<span class="yp-spinner"></span> กำลังส่ง…';
   try {
-    const r = await window.YP_API.donateLog(f.name.value, +f.amount.value, f.channel.value, f.note.value);
+    const note = (f.currency.value && f.currency.value!=='THB' ? `[${f.currency.value}] ` : '') + (f.note.value||'');
+    const r = await window.YP_API.donateLog(f.name.value, +f.amount.value, f.channel.value, note);
     if (r.ok){ msg.textContent = '✓ ขอบคุณมากๆ น้าาา 💚'; f.reset(); }
     else msg.textContent = '✗ '+(r.error||'error');
   } catch(_){ msg.textContent = 'network error'; }

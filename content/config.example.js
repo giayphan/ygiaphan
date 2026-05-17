@@ -15,8 +15,16 @@ window.YP_CONFIG = {
 
   // ช่องทาง donate (เว้นว่าง = ซ่อน)
   DONATE: {
-    promptpay: "",                            // เบอร์โทร หรือ เลขบัตร PromptPay
-    promptpay_qr: "assets/img/promptpay.png", // (optional) รูป QR code
+    // 🇹🇭 Thailand
+    promptpay: "",                            // เบอร์โทร / เลขบัตร PromptPay
+    promptpay_qr: "assets/img/promptpay.png", // (optional) รูป QR
+    // 🇻🇳 Vietnam
+    momo: "",                                 // số điện thoại MoMo
+    momo_qr: "assets/img/momo.png",           // (optional) QR MoMo
+    vietqr: "",                               // số tài khoản (Vietcombank, Techcombank, …)
+    vietqr_bank: "",                          // tên ngân hàng (vd: "Vietcombank")
+    vietqr_qr: "assets/img/vietqr.png",       // (optional) ảnh VietQR
+    // 🌐 International
     paypal: ""                                // https://paypal.me/yourname
   }
 };
