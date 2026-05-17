@@ -141,10 +141,33 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
   // Vocab review (Flashcard) + Library
   const vEl = $('#tab-vocab');
   const esc = s => String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let _voices = [];
+  function loadVoices(){
+    _voices = speechSynthesis.getVoices() || [];
+    if (!_voices.length){
+      speechSynthesis.onvoiceschanged = () => { _voices = speechSynthesis.getVoices()||[]; };
+    }
+  }
+  loadVoices();
+  function pickVoice(lang){
+    const pref = lang.toLowerCase(); // 'vi' or 'th'
+    return _voices.find(v => v.lang.toLowerCase().startsWith(pref+'-'))
+        || _voices.find(v => v.lang.toLowerCase().startsWith(pref))
+        || null;
+  }
+  // detect Vietnamese diacritics → vi, else th
+  function detectLang(text){
+    return /[ăâđêôơưàáảãạằắẳẵặầấẩẫậèéẻẽẹềếểễệìíỉĩịòóỏõọồốổỗộờớởỡợùúủũụừứửữựỳýỷỹỵ]/i.test(text) ? 'vi' : 'th';
+  }
   function speak(text, lang){
     try{
+      if (!_voices.length) loadVoices();
+      const l = lang || detectLang(text);
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = lang||'vi-VN'; u.rate = .85;
+      const v = pickVoice(l);
+      if (v) u.voice = v;
+      u.lang = l === 'vi' ? 'vi-VN' : 'th-TH';
+      u.rate = .85;
       speechSynthesis.cancel(); speechSynthesis.speak(u);
     }catch(_){}
   }
