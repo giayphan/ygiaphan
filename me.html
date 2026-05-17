@@ -37,7 +37,7 @@
 
   <div id="content" hidden>
     <div class="me-hero">
-      <img id="meAvatar" src="" alt="">
+      <img id="meAvatar" src="" alt="" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/img/favicon.svg'">
       <div style="flex:1">
         <h1 id="meName"></h1>
         <p class="sub" id="meEmail"></p>
@@ -184,7 +184,7 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
       r.leaderboard.map((x,i) => `
         <div class="me-card" style="display:flex;align-items:center;gap:12px">
           <strong style="font-size:1.3rem;color:var(--brand);width:30px">${i+1}</strong>
-          <img src="${x.avatar||'assets/img/favicon.svg'}" style="width:40px;height:40px;border-radius:50%;object-fit:cover">
+          <img src="${x.avatar||'assets/img/favicon.svg'}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/img/favicon.svg'" style="width:40px;height:40px;border-radius:50%;object-fit:cover">
           <div style="flex:1"><strong>${x.name||'(ไม่ระบุ)'}</strong><div class="meta">${x.attempts} quizzes</div></div>
           <strong style="color:var(--brand);font-size:1.2rem">${x.points} pts</strong>
         </div>`).join('');
