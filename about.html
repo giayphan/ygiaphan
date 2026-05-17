@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi">
+<html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -18,16 +18,16 @@
     </div>
 
     <section class="donate" id="donate">
-      <h2>💚 สนับสนุนเรา / Ủng hộ chúng tôi</h2>
-      <p class="muted">ถ้าเนื้อหาช่วยคุณได้ ก็ช่วยเลี้ยงกาแฟเราหน่อยน้าาา 🍵</p>
+      <h2>💚 <span data-t="donate_thanks">Support us</span></h2>
+      <p class="muted" id="donateIntro">If the content helps you, buy us a coffee 🍵</p>
       <div class="donate__grid" id="donateGrid"></div>
       <div class="donate__thanks" id="donateThanks"></div>
       <details class="donate__log">
-        <summary>แจ้งการโอน (เพื่อ tag ขอบคุณบนเว็บ)</summary>
+        <summary data-t="donate_log_title">Report transfer</summary>
         <form id="donateForm">
-          <input name="name" placeholder="ชื่อ (จะแสดงในรายชื่อขอบคุณ)" maxlength="50">
+          <input name="name" id="donateName" placeholder="Name" maxlength="50">
           <div style="display:flex;gap:8px">
-            <input name="amount" type="number" placeholder="จำนวน" required min="1" style="flex:1">
+            <input name="amount" id="donateAmount" type="number" placeholder="Amount" required min="1" style="flex:1">
             <select name="currency" style="width:90px">
               <option value="THB">THB ฿</option>
               <option value="VND">VND ₫</option>
@@ -35,14 +35,14 @@
             </select>
           </div>
           <select name="channel" required>
-            <option value="">— ช่องทาง / Channel —</option>
+            <option value="" id="donateChanPh">— Channel —</option>
             <option value="promptpay">PromptPay 🇹🇭</option>
             <option value="momo">MoMo 🇻🇳</option>
             <option value="vietqr">VietQR / Bank 🇻🇳</option>
             <option value="paypal">PayPal 🌐</option>
           </select>
-          <textarea name="note" placeholder="ข้อความถึงผู้สร้าง (optional)" maxlength="500"></textarea>
-          <button class="btn btn--primary" type="submit">ส่งการแจ้งโอน</button>
+          <textarea name="note" id="donateNote" placeholder="Note (optional)" maxlength="500"></textarea>
+          <button class="btn btn--primary" type="submit" data-t="donate_send">Send</button>
           <p id="donateMsg" class="muted"></p>
         </form>
       </details>
@@ -81,13 +81,24 @@
 <script src="assets/js/ui.js"></script>
 <script src="assets/js/card.js"></script>
 <script>
-document.querySelector('[data-i18n="about_title"]').textContent = (window.YP_T||{}).about_title||'About';
+const T = window.YP_T||{};
+document.documentElement.lang = window.YP_LANG||'vi';
+document.querySelectorAll('[data-t]').forEach(el => { const k=el.dataset.t; if (T[k]) el.textContent = T[k]; });
+document.querySelector('[data-i18n="about_title"]').textContent = T.about_title||'About';
+// placeholders
+const setPh = (id,k) => { const el=document.getElementById(id); if (el && T[k]) el.placeholder = T[k]; };
+setPh('donateName','comment_name');
+setPh('donateAmount','donate_amount');
+setPh('donateNote','donate_note');
+const chp = document.getElementById('donateChanPh'); if (chp) chp.textContent = '— '+(T.donate_channel||'Channel')+' —';
 document.querySelectorAll('[data-content] p').forEach(p => p.hidden = (window.YP_LANG !== p.classList[0]));
 
 // donate grid
 const D = (window.YP_CONFIG||{}).DONATE||{};
 const items = [];
-const copyCode = (val,label) => `<code title="คลิกเพื่อ copy" onclick="navigator.clipboard.writeText('${val}');this.textContent='✓ คัดลอกแล้ว';setTimeout(()=>this.textContent='${val}',1500)">${label||val}</code>`;
+const copyTitle = T.donate_copy||'Copy';
+const copyDone = T.donate_copied||'✓';
+const copyCode = (val,label) => `<code title="${copyTitle}" onclick="navigator.clipboard.writeText('${val}');this.textContent='${copyDone}';setTimeout(()=>this.textContent='${val}',1500)">${label||val}</code>`;
 if (D.promptpay) items.push(`<div class="donate__item">
   <strong>PromptPay 🇹🇭</strong>
   ${D.promptpay_qr ? `<img src="${D.promptpay_qr}" alt="PromptPay QR">` : ''}
@@ -108,9 +119,9 @@ if (D.vietqr) items.push(`<div class="donate__item">
 if (D.paypal) items.push(`<div class="donate__item">
   <strong>PayPal 🌐</strong>
   <p class="muted" style="margin:8px 0">USD · International</p>
-  <a href="${D.paypal}" target="_blank" rel="noopener">เปิด PayPal →</a>
+  <a href="${D.paypal}" target="_blank" rel="noopener">PayPal →</a>
 </div>`);
-document.getElementById('donateGrid').innerHTML = items.join('') || '<p class="muted">ยังไม่ได้ตั้งค่า donate</p>';
+document.getElementById('donateGrid').innerHTML = items.join('') || '<p class="muted">—</p>';
 
 // load thanks list
 (async () => {
@@ -118,7 +129,7 @@ document.getElementById('donateGrid').innerHTML = items.join('') || '<p class="m
     const r = await window.YP_API.thanksList();
     if (r.ok && r.list && r.list.length){
       document.getElementById('donateThanks').innerHTML = `
-        <h3 style="margin:20px 0 8px;color:var(--brand);font-size:1rem">💚 ขอบคุณผู้สนับสนุน</h3>
+        <h3 style="margin:20px 0 8px;color:var(--brand);font-size:1rem">💚 ${T.donate_thanks||'Thanks'}</h3>
         <div class="thanks-list">${r.list.map(d => `
           <span class="thanks-tag" title="${d.amount} THB">${d.name}</span>`).join('')}</div>`;
     }
@@ -131,14 +142,14 @@ document.getElementById('donateForm').addEventListener('submit', async e => {
   const f = e.currentTarget;
   const msg = document.getElementById('donateMsg');
   const btn = f.querySelector('button');
-  btn.disabled = true; btn.innerHTML = '<span class="yp-spinner"></span> กำลังส่ง…';
+  btn.disabled = true; btn.innerHTML = '<span class="yp-spinner"></span> '+(T.donate_sending||'…');
   try {
     const note = (f.currency.value && f.currency.value!=='THB' ? `[${f.currency.value}] ` : '') + (f.note.value||'');
     const r = await window.YP_API.donateLog(f.name.value, +f.amount.value, f.channel.value, note);
-    if (r.ok){ msg.textContent = '✓ ขอบคุณมากๆ น้าาา 💚'; f.reset(); }
+    if (r.ok){ msg.textContent = T.donate_success||'✓ thanks'; f.reset(); }
     else msg.textContent = '✗ '+(r.error||'error');
   } catch(_){ msg.textContent = 'network error'; }
-  finally { btn.disabled = false; btn.innerHTML = 'ส่งการแจ้งโอน'; }
+  finally { btn.disabled = false; btn.innerHTML = T.donate_send||'Send'; }
 });
 </script>
 </body>

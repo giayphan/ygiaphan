@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="vi">
+<html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>พจนานุกรม ไทย↔เวียดนาม · ygiaphan</title>
+<title>Từ điển / พจนานุกรม · ygiaphan</title>
 <link rel="icon" href="assets/img/favicon.svg">
 <link rel="stylesheet" href="assets/css/main.css?v=20260518">
 <style>
@@ -25,30 +25,30 @@
       <span class="dict-hero__sep">↔</span>
       <span class="dict-hero__th">พจนานุกรม</span>
     </h1>
-    <p class="dict-hero__sub">ไทย ↔ เวียดนาม · ค้นหาทันที · บันทึกคำโปรด · ฝึกด้วยแฟลชการ์ด</p>
+    <p class="dict-hero__sub" data-t="dict_subtitle"></p>
     <div class="dict-search-wrap">
       <span class="dict-search-ico">🔍</span>
       <input id="dict-search" class="dict-search" type="search"
-             placeholder="พิมพ์ภาษาไทยหรือเวียดนาม…" autocomplete="off" autocorrect="off" spellcheck="false">
+             placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
     </div>
   </section>
 
   <!-- Loading -->
   <div id="dict-loading" class="dict-loading" hidden>
     <div class="dict-loading__spinner"></div>
-    <p class="dict-loading__txt">กำลังโหลดคำศัพท์… / Đang tải từ vựng…</p>
+    <p class="dict-loading__txt" data-t="dict_loading"></p>
   </div>
 
   <!-- Controls -->
   <section class="dict-section">
     <div class="dict-section__head">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <h2>คำศัพท์</h2>
+        <h2 data-t="dict_words">Words</h2>
         <span id="dict-count" class="muted" style="font-size:.9em"></span>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button id="dict-favs-toggle" class="btn btn--ghost btn--sm">★ คำโปรด</button>
-        <button id="dict-flash-toggle" class="btn btn--ghost btn--sm">🃏 โหมดแฟลชการ์ด</button>
+        <button id="dict-favs-toggle" class="btn btn--ghost btn--sm" data-t="dict_favs">★ Favs</button>
+        <button id="dict-flash-toggle" class="btn btn--ghost btn--sm" data-t="dict_flash_mode">🃏</button>
       </div>
     </div>
 
@@ -77,6 +77,12 @@
 <script src="assets/js/api.js"></script>
 <script src="assets/js/ui.js"></script>
 <script src="assets/js/dict.js"></script>
-<script>document.addEventListener('DOMContentLoaded', window.YP_DICT_INIT);</script>
+<script>
+const T = window.YP_T||{};
+document.documentElement.lang = window.YP_LANG||'vi';
+document.querySelectorAll('[data-t]').forEach(el => { const k=el.dataset.t; if (T[k]) el.textContent = T[k]; });
+const dsi = document.getElementById('dict-search'); if (dsi && T.dict_search_ph) dsi.placeholder = T.dict_search_ph;
+document.addEventListener('DOMContentLoaded', window.YP_DICT_INIT);
+</script>
 </body>
 </html>

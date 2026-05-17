@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="th">
+<html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>เข้าสู่ระบบ · ygiaphan</title>
+<title>Login · ygiaphan</title>
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer-when-downgrade">
 <link rel="icon" href="assets/img/favicon.svg">
@@ -40,26 +40,26 @@
 
 <main class="login-wrap">
   <div class="login-card" id="loadingCard" style="text-align:center">
-    <span class="yp-spinner"></span> กำลังโหลด…
+    <span class="yp-spinner"></span> <span data-t="loading">Loading…</span>
   </div>
   <div class="login-card" id="loginCard" hidden>
-    <h1>🌿 เข้าสู่ระบบ</h1>
-    <p class="sub">รับ comment, ซื้อคอร์ส, ติดตามคำสั่งซื้อของคุณ</p>
+    <h1>🌿 <span data-t="login_title">Login</span></h1>
+    <p class="sub" data-t="login_sub"></p>
 
     <form id="emailForm">
       <input type="email" name="email" id="emailInput" placeholder="your@email.com" required>
-      <button class="btn" type="submit" id="emailBtn">📧 ส่งรหัส OTP</button>
+      <button class="btn" type="submit" id="emailBtn" data-t="login_send_otp">📧 Send OTP</button>
     </form>
     <form id="otpForm" hidden>
-      <p class="sub" style="margin-bottom:8px">กรอกรหัส 6 หลักจากอีเมล <strong id="otpEmail"></strong></p>
+      <p class="sub" style="margin-bottom:8px"><span data-t="login_otp_hint"></span> <strong id="otpEmail"></strong></p>
       <input type="text" name="otp" id="otpInput" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required
         style="text-align:center;letter-spacing:8px;font-size:1.3rem;font-weight:700">
-      <button class="btn" type="submit" id="otpBtn">✓ ยืนยัน</button>
-      <button class="btn" type="button" id="otpBack" style="background:#888;margin-top:6px">← เปลี่ยน email</button>
+      <button class="btn" type="submit" id="otpBtn" data-t="login_verify">✓ Verify</button>
+      <button class="btn" type="button" id="otpBack" data-t="login_change_email" style="background:#888;margin-top:6px">← Change email</button>
     </form>
 
     <div id="gDiv" hidden>
-      <div class="divider">หรือ</div>
+      <div class="divider" data-t="login_or">or</div>
       <div id="gBtn" style="display:flex;justify-content:center"></div>
     </div>
 
@@ -67,10 +67,10 @@
   </div>
 
   <div class="login-card me-card" id="meCard" hidden>
-    <img id="meAvatar" src="" alt="">
+    <img id="meAvatar" src="" alt="" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/img/favicon.svg'">
     <h1 id="meName"></h1>
     <p class="sub" id="meEmail"></p>
-    <button class="btn" id="logoutBtn">ออกจากระบบ</button>
+    <button class="btn" id="logoutBtn" data-t="logout">Logout</button>
   </div>
 </main>
 
@@ -88,6 +88,9 @@
 <script src="assets/js/auth.js"></script>
 <script>
 const $ = s => document.querySelector(s);
+const T = window.YP_T || {};
+document.documentElement.lang = (window.YP_LANG||'vi');
+document.querySelectorAll('[data-t]').forEach(el => { const k=el.dataset.t; if (T[k]) el.textContent = T[k]; });
 const params = new URLSearchParams(location.search);
 
 // 1) ถ้า redirect กลับมาพร้อม session (จาก magic link fallback) → เก็บ + redirect
@@ -132,16 +135,16 @@ refreshMe();
 let pendingEmail = '';
 $('#emailForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const btn = $('#emailBtn'); btn.disabled = true; btn.innerHTML = '<span class="yp-spinner"></span> กำลังส่ง…';
+  const btn = $('#emailBtn'); btn.disabled = true; btn.innerHTML = '<span class="yp-spinner"></span> '+(T.login_sending||'…');
   const email = $('#emailInput').value.trim();
   const r = await window.YP_AUTH.magicSend(email);
-  btn.disabled = false; btn.innerHTML = '📧 ส่งรหัส OTP';
+  btn.disabled = false; btn.innerHTML = T.login_send_otp||'📧 OTP';
   if (r.ok){
     pendingEmail = email;
     $('#otpEmail').textContent = email;
     $('#emailForm').hidden = true;
     $('#otpForm').hidden = false;
-    $('#msg').innerHTML = `<div class="msg msg--ok">✓ ส่งรหัสไปที่ ${email} แล้ว</div>`;
+    $('#msg').innerHTML = `<div class="msg msg--ok">${(T.login_otp_sent||'✓ {email}').replace('{email}', email)}</div>`;
     setTimeout(()=>$('#otpInput').focus(), 100);
   } else {
     $('#msg').innerHTML = `<div class="msg msg--err">✗ ${r.error||'error'}</div>`;
@@ -151,13 +154,13 @@ $('#emailForm').addEventListener('submit', async e => {
 // 4) ยืนยัน OTP
 $('#otpForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const btn = $('#otpBtn'); btn.disabled = true; btn.innerHTML = '<span class="yp-spinner"></span> กำลังยืนยัน…';
+  const btn = $('#otpBtn'); btn.disabled = true; btn.innerHTML = '<span class="yp-spinner"></span> '+(T.login_verifying||'…');
   const otp = $('#otpInput').value.trim();
   const r = await window.YP_AUTH.magicVerify(pendingEmail, otp);
-  btn.disabled = false; btn.innerHTML = '✓ ยืนยัน';
+  btn.disabled = false; btn.innerHTML = T.login_verify||'✓';
   if (r.ok){
     window.YP_AUTH.setToken(r.session);
-    $('#msg').innerHTML = `<div class="msg msg--ok">✓ เข้าสู่ระบบสำเร็จ</div>`;
+    $('#msg').innerHTML = `<div class="msg msg--ok">${T.login_success||'✓'}</div>`;
     setTimeout(()=> location.replace(sessionStorage.getItem('yp:back')||'index.html'), 500);
   } else {
     $('#msg').innerHTML = `<div class="msg msg--err">✗ ${r.error||'error'}</div>`;

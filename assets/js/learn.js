@@ -12,9 +12,11 @@
       return 'YP_VOCAB_SLOT';
     });
     // Auto-extract vocab from markdown tables (when no ::: vocab block)
+    // Always store {vi, th, ph} where ph = phonetic of target language word
+    // Table column 0 is target (the language being taught), last col is native, middle = phonetic
     if (!vocab.length){
       const lines = md.split('\n');
-      let inTable = false, dir = 0; // 0=none, 1=vi-first (col0=vi), 2=th-first (col0=th)
+      let inTable = false, dir = 0; // 1=col0 is vi (target), 2=col0 is th (target)
       for (let i = 0; i < lines.length; i++){
         const ln = lines[i].trim();
         if (ln.startsWith('|') && ln.endsWith('|')){
@@ -30,9 +32,10 @@
           if (dir && cells.length >= 2){
             const first = cells[0], last = cells[cells.length-1];
             const ph = cells.length >= 3 ? cells[1] : '';
+            // first = target word, last = native translation
             const vi = dir === 1 ? first : last;
             const th = dir === 1 ? last  : first;
-            if (vi && th && vi !== th && !/^[-:\s]+$/.test(vi)) vocab.push({vi, th, ph});
+            if (vi && th && vi !== th && !/^[-:\s]+$/.test(vi)) vocab.push({vi, th, ph, target: dir===1?'vi':'th'});
           }
         } else { inTable = false; dir = 0; }
       }
@@ -58,19 +61,26 @@
   // Render vocab block (cards + save button)
   window.YP_renderVocab = function(items, slug){
     if (!items.length) return '';
+    const T = window.YP_T||{};
     const isLogin = window.YP_AUTH && window.YP_AUTH.isLogin();
     return `<section class="vocab-block">
-      <h3>📚 ศัพท์ในบทนี้ <small class="muted">(${items.length})</small></h3>
+      <h3>📚 ${T.vocab_in_lesson||'Vocab'} <small class="muted">(${items.length})</small></h3>
       <div class="vocab-grid">
-        ${items.map(v => `
+        ${items.map(v => {
+          const lang = window.YP_LANG||'vi';
+          const targetWord = lang==='th' ? v.vi : v.th;
+          const nativeWord = lang==='th' ? v.th : v.vi;
+          const targetClass = lang==='th' ? 'vn' : '';
+          return `
           <div class="vocab-card" data-vi="${escapeAttr(v.vi)}" data-th="${escapeAttr(v.th)}" data-ph="${escapeAttr(v.ph||'')}">
-            <div class="vocab-card__vi vn">${escapeHtml(v.vi)}</div>
+            <div class="vocab-card__vi ${targetClass}">${escapeHtml(targetWord)}</div>
             ${v.ph?`<div class="vocab-card__ph">${escapeHtml(v.ph)}</div>`:''}
-            <div class="vocab-card__th">${escapeHtml(v.th)}</div>
-            ${isLogin ? `<button class="vocab-card__save" title="บันทึกศัพท์" aria-label="บันทึก">+</button>` : ''}
-          </div>`).join('')}
+            <div class="vocab-card__th">${escapeHtml(nativeWord)}</div>
+            ${isLogin ? `<button class="vocab-card__save" title="${T.vocab_save||'Save'}" aria-label="${T.vocab_save||'Save'}">+</button>` : ''}
+          </div>`;
+        }).join('')}
       </div>
-      ${isLogin ? `<p class="muted" style="text-align:center;font-size:.85em">💡 บันทึกแล้ว → ทบทวนที่ <a href="me.html#vocab">โปรไฟล์</a></p>` : `<p class="muted" style="text-align:center;font-size:.85em">🔒 <a href="login.html">เข้าสู่ระบบ</a> เพื่อบันทึกและทบทวนศัพท์</p>`}
+      ${isLogin ? `<p class="muted" style="text-align:center;font-size:.85em">💡 ${T.vocab_member_hint||''} <a href="me.html#vocab">${T.profile||'Profile'}</a></p>` : `<p class="muted" style="text-align:center;font-size:.85em">🔒 <a href="login.html">${T.login||'Login'}</a> — ${T.vocab_login_hint||''}</p>`}
     </section>`;
   };
 
@@ -80,8 +90,9 @@
         const card = btn.closest('.vocab-card');
         btn.disabled = true;
         const r = await window.YP_API.vocabSave(card.dataset.vi, card.dataset.th, slug, card.dataset.ph);
-        if (r.ok){ btn.textContent='✓'; btn.classList.add('is-saved'); btn.title = r.dup?'มีอยู่แล้ว':'บันทึกแล้ว'; }
-        else { btn.textContent='!'; btn.title='ผิดพลาด: '+r.error; }
+        const T = window.YP_T||{};
+        if (r.ok){ btn.textContent='✓'; btn.classList.add('is-saved'); btn.title = r.dup?(T.vocab_dup||'Dup'):(T.vocab_saved||'Saved'); }
+        else { btn.textContent='!'; btn.title=(T.vocab_err||'Error')+': '+r.error; }
       };
     });
   };
@@ -89,8 +100,9 @@
   // Render quiz block
   window.YP_renderQuiz = function(items, slug){
     if (!items.length) return '';
+    const T = window.YP_T||{};
     return `<section class="quiz-block" data-quiz-slug="${escapeAttr(slug)}">
-      <h3>📝 ลองทำแบบฝึกหัด <small class="muted">(${items.length} ข้อ)</small></h3>
+      <h3>📝 ${T.quiz_title||'Quiz'} <small class="muted">(${items.length} ${T.quiz_q_count||''})</small></h3>
       <form class="quiz-form">
         ${items.map((q,i) => `
           <div class="quiz-q" data-qi="${i}">
@@ -101,7 +113,7 @@
                 <span>${escapeHtml(o.text)}</span>
               </label>`).join('')}
           </div>`).join('')}
-        <button type="submit" class="btn btn--primary">✓ ตรวจคำตอบ</button>
+        <button type="submit" class="btn btn--primary">✓ ${T.quiz_check||'Check'}</button>
         <div class="quiz-result" hidden></div>
       </form>
     </section>`;

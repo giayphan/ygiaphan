@@ -26,7 +26,7 @@
   const isLogin = window.YP_AUTH && window.YP_AUTH.isLogin();
   if (membersOnly && !isLogin){
     const teaser = (md||'').split('\n\n').slice(0,2).join('\n\n');
-    md = teaser + `\n\n---\n\n> 🔒 **เนื้อหานี้สำหรับสมาชิกเท่านั้น**\n>\n> [เข้าสู่ระบบ →](login.html)`;
+    md = teaser + `\n\n---\n\n> 🔒 **${T.members_only_teaser||'Members only'}**\n>\n> [${T.login||'Login'} →](login.html)`;
   }
   let body = window.marked ? marked.parse(md) : md;
   // Inject vocab/quiz UI at placeholders (may be wrapped in <p> by marked)
@@ -61,7 +61,7 @@
 
   root.innerHTML = `
     <header class="post__header">
-      <button class="post__bookmark" data-bookmark="${slug}" title="บันทึกบทความ" aria-label="บันทึก" hidden>☆</button>
+      <button class="post__bookmark" data-bookmark="${slug}" title="${T.bookmark_save||'Bookmark'}" aria-label="${T.bookmark_save||'Bookmark'}" hidden>☆</button>
       <div class="post__cats">${cats}</div>
       <h1>${title}</h1>
       <div class="post__meta">
@@ -106,7 +106,7 @@
     const bmBtn = root.querySelector('[data-bookmark]');
     if (bmBtn){
       bmBtn.hidden = false;
-      const updBtn = on => { bmBtn.classList.toggle('is-on', on); bmBtn.textContent = on?'★':'☆'; bmBtn.title = on?'ยกเลิกบันทึก':'บันทึกบทความ'; };
+      const updBtn = on => { bmBtn.classList.toggle('is-on', on); bmBtn.textContent = on?'★':'☆'; bmBtn.title = on?(T.bookmark_unsave||'Unsave'):(T.bookmark_save||'Bookmark'); };
       try {
         const list = await window.YP_API.bookmarkList();
         if (list.ok) updBtn(list.slugs.includes(slug));
@@ -189,14 +189,14 @@ async function renderComments(slug){
     const av = c.avatar ? `<img class="comment__avatar" src="${escapeHtml(c.avatar)}" alt="">` : `<span class="comment__avatar comment__avatar--ph">${escapeHtml((c.name||'?')[0])}</span>`;
     const badge = c.is_member ? `<span class="comment__badge" title="สมาชิก">✓</span>` : '';
     const replies = (byParent[c.ts]||[]).map(r => renderOne(r, c.name)).join('');
-    const replyTo = parentName ? `<div class="comment__reply-badge">↩ ตอบกลับ <strong>${escapeHtml(parentName)}</strong></div>` : '';
+    const replyTo = parentName ? `<div class="comment__reply-badge">↩ ${T.reply||'Reply'} <strong>${escapeHtml(parentName)}</strong></div>` : '';
     return `<div class="comment yp-fade-in">
       ${av}
       <div class="comment__main">
         <div class="comment__head"><strong>${escapeHtml(c.name)}</strong>${badge} · <span class="muted">${new Date(c.ts).toLocaleString()}</span></div>
         ${replyTo}
         <div class="comment__body">${escapeHtml(c.msg).replace(/\n/g,'<br>')}</div>
-        <div class="comment__actions"><button class="comment__action" data-reply="${c.ts}">↩ ตอบกลับ</button></div>
+        <div class="comment__actions"><button class="comment__action" data-reply="${c.ts}">↩ ${T.reply||'Reply'}</button></div>
         ${replies?`<div class="comment__replies">${replies}</div>`:''}
       </div>
     </div>`;
@@ -216,12 +216,12 @@ async function renderComments(slug){
       const parentTs = btn.dataset.reply;
       form.innerHTML = `
         <input type="hidden" name="parent_ts" value="${escapeHtml(parentTs)}">
-        <div class="comment__replying-to">↩ ตอบกลับ <strong>${escapeHtml(replyToName)}</strong></div>
-        ${isLogin ? '' : `<input name="name" placeholder="ชื่อ" required maxlength="50">`}
-        <textarea name="msg" required maxlength="2000" placeholder="ตอบกลับ ${escapeHtml(replyToName)}…"></textarea>
+        <div class="comment__replying-to">↩ ${T.reply||'Reply'} <strong>${escapeHtml(replyToName)}</strong></div>
+        ${isLogin ? '' : `<input name="name" placeholder="${T.comment_name||'Name'}" required maxlength="50">`}
+        <textarea name="msg" required maxlength="2000" placeholder="${T.reply||'Reply'} ${escapeHtml(replyToName)}…"></textarea>
         <input name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" aria-hidden="true">
         ${isLogin ? '' : `<label class="captcha"><span>Verify: <strong>${cap.q}</strong></span><input name="answer" required inputmode="numeric" pattern="-?[0-9]+" autocomplete="off"></label>`}
-        <div><button type="button" class="btn btn--ghost" data-cancel>ยกเลิก</button><button type="submit" class="btn btn--primary">ส่ง</button></div>
+        <div><button type="button" class="btn btn--ghost" data-cancel>${T.cancel||'Cancel'}</button><button type="submit" class="btn btn--primary">${T.send||T.comment_send||'Send'}</button></div>
         <p class="form-error" hidden></p>`;
       main.querySelector('.comment__actions').after(form);
       form.querySelector('textarea').focus();
@@ -233,9 +233,9 @@ async function renderComments(slug){
         // honeypot
         if (form.website.value.trim() !== '') return;
         // min 2s (bot ส่งเร็วเกิน)
-        if (Date.now() - startedAt < 2000){ errEl.hidden=false; errEl.textContent='⏱ ช้าๆ หน่อย'; return; }
+        if (Date.now() - startedAt < 2000){ errEl.hidden=false; errEl.textContent='⏱ '+(T.too_fast||'too fast'); return; }
         if (!isLogin){
-          if (parseInt(form.answer.value,10) !== cap.a){ errEl.hidden=false; errEl.textContent='✗ คำตอบผิด'; return; }
+          if (parseInt(form.answer.value,10) !== cap.a){ errEl.hidden=false; errEl.textContent='✗ '+(T.captcha_wrong||'wrong'); return; }
         }
         const msg = form.msg.value.trim();
         if (!msg) return;
@@ -246,9 +246,9 @@ async function renderComments(slug){
         sb.disabled = true; sb.textContent = '...';
         try {
           const r = await window.YP_API.addComment(slug, name, msg, form.parent_ts.value);
-          if (r && r.error){ errEl.hidden=false; errEl.textContent='✗ '+r.error; sb.disabled=false; sb.textContent='ส่ง'; return; }
+          if (r && r.error){ errEl.hidden=false; errEl.textContent='✗ '+r.error; sb.disabled=false; sb.textContent=T.send||T.comment_send||'Send'; return; }
           await renderComments(slug);
-        } catch(err){ errEl.hidden=false; errEl.textContent='✗ '+err.message; sb.disabled=false; sb.textContent='ส่ง'; }
+        } catch(err){ errEl.hidden=false; errEl.textContent='✗ '+err.message; sb.disabled=false; sb.textContent=T.send||T.comment_send||'Send'; }
       };
     };
   });

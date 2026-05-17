@@ -35,7 +35,7 @@
   }
   function getHistory(){ try{ return JSON.parse(localStorage.getItem(HISTKEY)||'[]'); }catch{ return []; } }
 
-  function normalize(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim(); }
+  function normalize(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,"").trim(); }
 
   // ── render word card ─────────────────────────────────────
   function cardHtml(w, favs, mode){
@@ -55,7 +55,7 @@
         <div class="dict-card__phonetic">${esc(phonetic||'')}</div>
         <div class="dict-card__secondary">${esc(secondary)}</div>
         ${example ? `<div class="dict-card__ex">${esc(example)}</div>` : ''}
-        <button class="dict-card__fav${isFav?' is-on':''}" data-fav="${w.id}" title="${isFav?'ยกเลิกบันทึก':'บันทึกคำ'}">
+        <button class="dict-card__fav${isFav?' is-on':''}" data-fav="${w.id}" title="${isFav?(window.YP_T?.dict_fav_on||'Unsave'):(window.YP_T?.dict_fav_off||'Save')}">
           ${isFav?'★':'☆'}
         </button>
       </div>
@@ -123,7 +123,7 @@
     if (!words.length){
       showLoading(false);
       const gridEl = document.getElementById('dict-grid');
-      if (gridEl) gridEl.innerHTML = '<p class="muted" style="grid-column:1/-1;text-align:center;padding:2rem">โหลดคำศัพท์ไม่สำเร็จ — กรุณาลองใหม่อีกครั้ง</p>';
+      if (gridEl) gridEl.innerHTML = '<p class="muted" style="grid-column:1/-1;text-align:center;padding:2rem">'+(window.YP_T?.dict_load_fail||'Load failed')+'</p>';
       return;
     }
     const favs = getFavs();
@@ -151,7 +151,7 @@
       } else {
         gridEl.innerHTML = results.length
           ? results.map(w => cardHtml(w, favs)).join('')
-          : `<p class="muted" style="grid-column:1/-1;text-align:center;padding:2rem">ไม่พบคำที่ค้นหา</p>`;
+          : `<p class="muted" style="grid-column:1/-1;text-align:center;padding:2rem">${window.YP_T?.dict_no_result||'No results'}</p>`;
         gridEl.querySelectorAll('[data-fav]').forEach(b => b.addEventListener('click', onFav));
       }
     }
@@ -159,7 +159,7 @@
     // Flashcard
     const flashWrap = document.getElementById('dict-flash');
     function renderFlash(results, favs){
-      if (!results.length){ flashWrap.innerHTML = `<p class="muted" style="text-align:center;padding:2rem">ไม่มีคำ</p>`; return; }
+      if (!results.length){ flashWrap.innerHTML = `<p class="muted" style="text-align:center;padding:2rem">${window.YP_T?.dict_no_words||'No words'}</p>`; return; }
       const w = results[flashIdx];
       const isFav = favs.has(w.id);
       const lang = window.YP_LANG||'vi';
@@ -171,11 +171,11 @@
       const example  = lang==='th' ? w.ex_vi : w.ex_th;
       flashWrap.innerHTML = `
         <div class="flash-card" id="flash-inner">
-          <button class="flash-card__fav${isFav?' is-on':''}" data-fav="${w.id}" title="${isFav?'ยกเลิกบันทึก':'บันทึก'}" aria-label="${isFav?'ยกเลิกบันทึก':'บันทึก'}">${isFav?'★':'☆'}</button>
+          <button class="flash-card__fav${isFav?' is-on':''}" data-fav="${w.id}" title="${isFav?(window.YP_T?.dict_fav_on||'Unsave'):(window.YP_T?.dict_fav_off||'Save')}" aria-label="${isFav?(window.YP_T?.dict_fav_on||'Unsave'):(window.YP_T?.dict_fav_off||'Save')}">${isFav?'★':'☆'}</button>
           <div class="flash-card__side flash-card__front">
             <div class="dict-card__cat">${catLabel(w.cat)}</div>
             <div class="flash-word">${esc(front)}</div>
-            <div class="flash-hint">แตะเพื่อดูคำแปล</div>
+            <div class="flash-hint">${window.YP_T?.tap_to_flip||'Tap to flip'}</div>
           </div>
           <div class="flash-card__side flash-card__back">
             <div class="flash-answer">${esc(back)}</div>
@@ -184,12 +184,12 @@
           </div>
         </div>
         <div class="flash-nav">
-          <button class="btn btn--ghost" id="flash-prev">← ก่อนหน้า</button>
+          <button class="btn btn--ghost" id="flash-prev">${window.YP_T?.dict_prev||'← Prev'}</button>
           <span class="flash-count">${flashIdx+1} / ${results.length}</span>
-          <button class="btn btn--ghost" id="flash-next">ถัดไป →</button>
+          <button class="btn btn--ghost" id="flash-next">${window.YP_T?.dict_next||'Next →'}</button>
         </div>
         <div class="flash-actions">
-          <button class="btn btn--ghost btn--sm" id="flash-shuffle">🔀 สุ่ม</button>
+          <button class="btn btn--ghost btn--sm" id="flash-shuffle">${window.YP_T?.dict_shuffle||'🔀'}</button>
         </div>`;
       document.getElementById('flash-inner').addEventListener('click', function(e){
         if (e.target.closest('.flash-card__fav')) return;
@@ -203,7 +203,7 @@
         const on = toggleFav(+this.dataset.fav);
         this.classList.toggle('is-on',on);
         this.textContent = on?'★':'☆';
-        this.title = on?'ยกเลิกบันทึก':'บันทึก';
+        this.title = on?(window.YP_T?.dict_fav_on||'Unsave'):(window.YP_T?.dict_fav_off||'Save');
       });
     }
 
@@ -213,7 +213,7 @@
       btnFlash.addEventListener('click', ()=>{
         flashMode = !flashMode;
         flashIdx = 0;
-        btnFlash.textContent = flashMode ? '📋 โหมดรายการ' : '🃏 โหมดแฟลชการ์ด';
+        btnFlash.textContent = flashMode ? (window.YP_T?.dict_grid_mode||'📋 List') : (window.YP_T?.dict_flash_mode||'🃏 Flashcard');
         flashWrap.hidden = !flashMode;
         gridEl.hidden = flashMode;
         renderGrid();

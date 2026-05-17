@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="th">
+<html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -36,7 +36,7 @@
 <div data-include="header"></div>
 
 <main class="me-wrap">
-  <div id="loading" style="text-align:center;padding:40px"><span class="yp-spinner"></span> กำลังโหลด…</div>
+  <div id="loading" style="text-align:center;padding:40px"><span class="yp-spinner"></span> <span data-t="loading">กำลังโหลด…</span></div>
 
   <div id="content" hidden>
     <div class="me-hero">
@@ -46,14 +46,14 @@
         <p class="sub" id="meEmail"></p>
         <p class="sub" id="meProvider"></p>
       </div>
-      <button class="btn--ghost" id="logoutBtn">ออกจากระบบ</button>
+      <button class="btn--ghost" id="logoutBtn" data-t="logout">ออกจากระบบ</button>
     </div>
 
     <div class="me-tabs">
-      <button class="me-tab active" data-tab="vocab">🎴 ทบทวนศัพท์ <span id="vocabBadge" class="ad-badge" hidden></span></button>
-      <button class="me-tab" data-tab="bookmarks">⭐ Bookmarks</button>
-      <button class="me-tab" data-tab="orders">🛒 คำสั่งซื้อ</button>
-      <button class="me-tab" data-tab="leaderboard">🏆 อันดับ</button>
+      <button class="me-tab active" data-tab="vocab">🎴 <span data-t="vocab_review">ทบทวนศัพท์</span> <span id="vocabBadge" class="ad-badge" hidden></span></button>
+      <button class="me-tab" data-tab="bookmarks">⭐ <span data-t="bookmarks">Bookmarks</span></button>
+      <button class="me-tab" data-tab="orders">🛒 <span data-t="orders">คำสั่งซื้อ</span></button>
+      <button class="me-tab" data-tab="leaderboard">🏆 <span data-t="leaderboard">อันดับ</span></button>
     </div>
 
     <div id="tab-vocab" class="tab-pane"></div>
@@ -78,6 +78,9 @@
 <script src="assets/js/card.js"></script>
 <script>
 const $ = s => document.querySelector(s);
+const T = window.YP_T || {};
+document.documentElement.lang = window.YP_LANG||'vi';
+document.querySelectorAll('[data-t]').forEach(el => { const k=el.dataset.t; if (T[k]) el.textContent = T[k]; });
 
 if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
   const meR = await window.YP_AUTH.me();
@@ -86,7 +89,7 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
   $('#meAvatar').src = u.avatar || 'assets/img/favicon.svg';
   $('#meName').textContent = u.name || u.email;
   $('#meEmail').textContent = u.email;
-  $('#meProvider').textContent = 'login ผ่าน: ' + (u.provider || 'email');
+  $('#meProvider').textContent = (T.login||'login')+': ' + (u.provider || 'email');
   $('#loading').hidden = true;
   $('#content').hidden = false;
 
@@ -118,7 +121,7 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
       </a>`;
     }).join('');
   } else {
-    bmEl.innerHTML = '<div class="me-empty">ยังไม่มีบทความที่บันทึกไว้<br><small>กดรูป ⭐ ในหน้าบทความเพื่อบันทึก</small></div>';
+    bmEl.innerHTML = `<div class="me-empty">${T.bookmarks_empty||'No bookmarks yet'}<br><small>⭐</small></div>`;
   }
 
   // Orders
@@ -131,11 +134,11 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
       return `<div class="me-card">
         <h3>${o.item_title}</h3>
         <p class="meta">${date} · ${o.amount} ${o.currency} · <span class="pill pill--${cls}">${o.status}</span></p>
-        ${o.slip_url?`<p class="meta"><a href="${o.slip_url}" target="_blank">ดูสลิป →</a></p>`:''}
+        ${o.slip_url?`<p class="meta"><a href="${o.slip_url}" target="_blank">${T.view_slip||'Slip'} →</a></p>`:''}
       </div>`;
     }).join('');
   } else {
-    odEl.innerHTML = '<div class="me-empty">ยังไม่มีคำสั่งซื้อ<br><small><a href="courses.html">ดูคอร์ส →</a></small></div>';
+    odEl.innerHTML = `<div class="me-empty">${T.orders_empty||'No orders'}<br><small><a href="courses.html">${T.courses_title||'Courses'} →</a></small></div>`;
   }
 
   // Vocab review (Flashcard) + Library
@@ -179,8 +182,8 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
     const r = await window.YP_API.vocabDue();
     if (!r.ok || !r.items.length){
       vEl.innerHTML = `
-        <div class="me-empty">✓ ไม่มีศัพท์ที่ต้องทบทวนตอนนี้<br><small>ไปบันทึกศัพท์จากบทความได้เลย</small></div>
-        <div style="text-align:center;margin-top:10px"><button class="btn--ghost" id="vlib">📖 ดูคลังศัพท์ทั้งหมด</button></div>`;
+        <div class="me-empty">✓ ${T.vocab_empty||'No words to review now'}</div>
+        <div style="text-align:center;margin-top:10px"><button class="btn--ghost" id="vlib">📖 ${T.view_library||'View library'}</button></div>`;
       $('#vocabBadge').hidden = true;
       $('#vlib').onclick = renderLibrary;
       return;
@@ -191,41 +194,47 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
     let i = 0, flipped = false, lastAction = null;
     function showCard(){
       if (i >= items.length){
-        vEl.innerHTML = `<div class="me-empty">🎉 จบรอบทบทวนแล้ว!<br>
-          <small><a href="javascript:void(0)" onclick="location.reload()">โหลดใหม่</a> ·
-          <a href="javascript:void(0)" id="vlib2">📖 คลังศัพท์</a></small></div>`;
+        vEl.innerHTML = `<div class="me-empty">🎉 ${T.vocab_done||'Done!'}<br>
+          <small><a href="javascript:void(0)" onclick="location.reload()">↻</a> ·
+          <a href="javascript:void(0)" id="vlib2">📖 ${T.view_library||'Library'}</a></small></div>`;
         $('#vlib2').onclick = renderLibrary;
         unbindKb();
         return;
       }
       const v = items[i]; flipped = false;
+      const uiLang = window.YP_LANG||'vi';
+      // target = opposite of UI lang; SRS stores ph as phonetic-of-target
+      const front = uiLang==='th' ? v.vi : v.th;
+      const back  = uiLang==='th' ? v.th : v.vi;
+      const targetLang = uiLang==='th' ? 'vi' : 'th';
+      const frontClass = uiLang==='th' ? 'vn' : '';
       vEl.innerHTML = `
-        <div class="flashcard-progress">การ์ด ${i+1} / ${items.length} · กล่อง ${v.box}
-          ${lastAction?` · <a href="javascript:void(0)" id="fundo">↶ ยกเลิก</a>`:''}</div>
+        <div class="flashcard-progress">${T.card_n_of||'Card'} ${i+1} / ${items.length} · ${T.box||'Box'} ${v.box}
+          ${lastAction?` · <a href="javascript:void(0)" id="fundo">↶ ${T.undo||'Undo'}</a>`:''}</div>
         <div class="flashcard" id="fcard">
-          <button class="flashcard__tts" id="ftts" title="ฟังเสียง" aria-label="ฟัง">🔊</button>
-          <div class="flashcard__front vn">${esc(v.vi)}</div>
+          <button class="flashcard__tts" id="ftts" title="🔊" aria-label="🔊">🔊</button>
+          <div class="flashcard__front ${frontClass}">${esc(front)}</div>
           <div class="flashcard__back" hidden>
             ${v.ph?`<div class="flashcard__ph">${esc(v.ph)}</div>`:''}
-            <div>${esc(v.th)}</div>
+            <div>${esc(back)}</div>
           </div>
-          <div class="flashcard__hint">คลิกหรือกด <kbd>Space</kbd> เพื่อดูคำแปล</div>
+          <div class="flashcard__hint">${T.tap_to_flip||'Tap to flip'} <kbd>Space</kbd></div>
         </div>
         <div class="flashcard__actions" id="fact" hidden>
-          <button class="btn btn--ghost" id="fwrong">✗ ยังไม่จำ <small>(1)</small></button>
-          <button class="btn btn--primary" id="fright">✓ จำได้ <small>(2)</small></button>
+          <button class="btn btn--ghost" id="fwrong">✗ ${T.forgot||'Forgot'} <small>(1)</small></button>
+          <button class="btn btn--primary" id="fright">✓ ${T.remembered||'Got it'} <small>(2)</small></button>
         </div>
-        <div style="text-align:center;margin-top:10px;font-size:.85em"><a href="javascript:void(0)" id="fdel" class="muted">🗑 ลบคำนี้</a></div>`;
+        <div style="text-align:center;margin-top:10px;font-size:.85em"><a href="javascript:void(0)" id="fdel" class="muted">🗑 ${T.delete_word||'Delete'}</a></div>`;
       const flip = () => {
         if (flipped) return;
         flipped = true;
         $('#fcard').querySelector('.flashcard__back').hidden = false;
-        $('#fcard').querySelector('.flashcard__hint').textContent = 'จำได้มั้ย? (1=ลืม / 2=จำได้)';
+        $('#fcard').querySelector('.flashcard__hint').textContent = (T.remember_q||'Remember?')+' (1/2)';
         $('#fact').hidden = false;
-        speak(v.vi);
+        speak(front, targetLang);
       };
       $('#fcard').onclick = e => { if (!e.target.closest('.flashcard__tts')) flip(); };
-      $('#ftts').onclick = e => { e.stopPropagation(); speak(v.vi); };
+      $('#ftts').onclick = e => { e.stopPropagation(); speak(front, targetLang); };
       const review = async ok => {
         lastAction = {vi:v.vi, prevBox:v.box};
         await window.YP_API.vocabReview(v.vi, ok);
@@ -234,7 +243,7 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
       $('#fright').onclick = () => review(true);
       $('#fwrong').onclick = () => review(false);
       $('#fdel').onclick = async () => {
-        if (!confirm('ลบ "'+v.vi+'" ออกจากคลัง?')) return;
+        if (!confirm((T.confirm_delete||'Delete?')+' "'+v.vi+'"')) return;
         await window.YP_API.vocabDelete(v.vi); i++; showCard();
       };
       const undo = $('#fundo'); if (undo) undo.onclick = async () => {
@@ -259,32 +268,40 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
     const r = await window.YP_API.vocabList();
     if (!r.ok){ vEl.innerHTML = '<div class="me-empty">โหลดไม่สำเร็จ</div>'; return; }
     const s = r.stats;
-    const boxes = s.byBox.map((n,i) => `<span class="vbox vbox--${i}">กล่อง ${i}: <b>${n}</b></span>`).join('');
-    const rows = r.items.slice().sort((a,b)=>a.box-b.box).map(v => `
-      <div class="vlib-row" data-vi="${esc(v.vi)}">
+    const boxes = s.byBox.map((n,i) => `<span class="vbox vbox--${i}">${T.box||'Box'} ${i}: <b>${n}</b></span>`).join('');
+    const uiLang = window.YP_LANG||'vi';
+    const targetLang = uiLang==='th' ? 'vi' : 'th';
+    const targetClass = uiLang==='th' ? 'vn' : '';
+    const rows = r.items.slice().sort((a,b)=>a.box-b.box).map(v => {
+      const target = uiLang==='th' ? v.vi : v.th;
+      const native = uiLang==='th' ? v.th : v.vi;
+      return `
+      <div class="vlib-row" data-vi="${esc(v.vi)}" data-target="${esc(target)}" data-lang="${targetLang}">
         <span class="vlib-box vbox--${v.box}">${v.box}</span>
         <div class="vlib-text">
-          <strong class="vn">${esc(v.vi)}</strong>
+          <strong class="${targetClass}">${esc(target)}</strong>
           ${v.ph?`<span class="muted"> · ${esc(v.ph)}</span>`:''}
-          <div class="muted" style="font-size:.85em">${esc(v.th)}</div>
+          <div class="muted" style="font-size:.85em">${esc(native)}</div>
         </div>
         <button class="vlib-tts" title="ฟัง" aria-label="ฟัง">🔊</button>
         <button class="vlib-del" title="ลบ" aria-label="ลบ">🗑</button>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     vEl.innerHTML = `
       <div class="vstats">
-        <strong>📦 ${s.total} คำ</strong> · ⏰ ${s.due} ถึงกำหนด
+        <strong>📦 ${s.total}</strong> · ⏰ ${s.due}
         <div class="vstats__boxes">${boxes}</div>
       </div>
-      <div style="margin:10px 0;text-align:center"><button class="btn btn--ghost" id="vback">← กลับไปทบทวน</button></div>
-      <div class="vlib">${rows || '<div class="me-empty">ยังไม่มีคำในคลัง</div>'}</div>`;
+      <div style="margin:10px 0;text-align:center"><button class="btn btn--ghost" id="vback">${T.back_to_review||'← Back'}</button></div>
+      <div class="vlib">${rows || '<div class="me-empty">'+(T.vocab_empty||'Empty')+'</div>'}</div>`;
     $('#vback').onclick = renderVocab;
     vEl.querySelectorAll('.vlib-tts').forEach(b => b.onclick = () => {
-      speak(b.closest('.vlib-row').dataset.vi);
+      const row = b.closest('.vlib-row');
+      speak(row.dataset.target, row.dataset.lang);
     });
     vEl.querySelectorAll('.vlib-del').forEach(b => b.onclick = async () => {
       const row = b.closest('.vlib-row');
-      if (!confirm('ลบ "'+row.dataset.vi+'"?')) return;
+      if (!confirm((T.confirm_delete||'Delete?')+' "'+row.dataset.vi+'"')) return;
       const r2 = await window.YP_API.vocabDelete(row.dataset.vi);
       if (r2.ok) row.remove();
     });

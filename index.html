@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi">
+<html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -14,12 +14,12 @@
 
   <section class="slider" data-slider></section>
 
-  <aside id="supporters-section" class="supporters-ticker" style="display:none" aria-label="ผู้สนับสนุน">
-    <span class="supporters-ticker__label">💚 ขอบคุณผู้สนับสนุน</span>
+  <aside id="supporters-section" class="supporters-ticker" style="display:none">
+    <span class="supporters-ticker__label" id="supLabel">💚</span>
     <div class="supporters-ticker__viewport">
       <div class="supporters-ticker__track" id="supporters-wrap"></div>
     </div>
-    <a class="supporters-ticker__cta" href="about.html#donate">ร่วมสนับสนุน →</a>
+    <a class="supporters-ticker__cta" id="supCta" href="about.html#donate">→</a>
   </aside>
 
   <section class="section" id="daily" data-section-daily>
@@ -72,6 +72,10 @@
 <script src="assets/js/home.js"></script>
 <script>
 (async function(){
+  const T = window.YP_T||{};
+  document.documentElement.lang = window.YP_LANG||'vi';
+  const lab = document.getElementById('supLabel'); if (lab) lab.textContent = '💚 '+(T.thanks_supporters||'Thanks');
+  const cta = document.getElementById('supCta');   if (cta) cta.textContent = (T.become_supporter||'Support')+' →';
   if (!window.YP_CONFIG || !window.YP_CONFIG.USE_API) return;
   const wrap = document.getElementById('supporters-wrap');
   const sec  = document.getElementById('supporters-section');

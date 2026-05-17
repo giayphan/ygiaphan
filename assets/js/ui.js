@@ -13,7 +13,7 @@
           <span class="brand__tag">${window.YP_LANG==='th' ? (site.tagline_th||'') : (site.tagline_vi||'')}</span>
         </span>
       </a>
-      <button class="nav-toggle" aria-label="menu" aria-expanded="false">☰</button>
+      <button class="nav-toggle" aria-label="${T.menu||'menu'}" aria-expanded="false">☰</button>
       <nav class="nav">
         ${nav.map(item => {
           const label = window.pickL(item);
@@ -150,7 +150,7 @@
     const navAuth = document.getElementById('navAuth');
     if (!navAuth || !window.YP_AUTH || !window.YP_AUTH.isLogin()) return;
     navAuth.href = 'me.html';
-    navAuth.title = 'โปรไฟล์';
+    navAuth.title = T.profile||'Profile';
     try {
       const r = await window.YP_AUTH.me();
       if (r && r.ok && r.user){
@@ -173,18 +173,18 @@
         const av = u.avatar
           ? `<img class="nav__avatar" src="${u.avatar}" alt="" referrerpolicy="no-referrer">`
           : `<span class="nav__avatar nav__avatar--ph">${initials}</span>`;
-        navAuth.innerHTML = `${av}<span class="nav__avatar-name">${name}</span><button class="nav__caret" id="navCaret" title="เมนู" aria-label="เมนู">▾</button>`;
+        navAuth.innerHTML = `${av}<span class="nav__avatar-name">${name}</span><button class="nav__caret" id="navCaret" title="${T.menu||'menu'}" aria-label="${T.menu||'menu'}">▾</button>`;
         const menu = document.createElement('div');
         menu.className = 'me-menu';
         menu.hidden = true;
         menu.innerHTML = `
-          <a href="me.html#vocab"><span>🎴</span> ทบทวนศัพท์</a>
-          <a href="me.html#bookmarks"><span>⭐</span> Bookmarks</a>
-          <a href="me.html#orders"><span>🛒</span> คำสั่งซื้อ</a>
-          <a href="me.html#leaderboard"><span>🏆</span> อันดับ</a>
+          <a href="me.html#vocab"><span>🎴</span> ${T.vocab_review||'Vocab'}</a>
+          <a href="me.html#bookmarks"><span>⭐</span> ${T.bookmarks||'Bookmarks'}</a>
+          <a href="me.html#orders"><span>🛒</span> ${T.orders||'Orders'}</a>
+          <a href="me.html#leaderboard"><span>🏆</span> ${T.leaderboard||'Top'}</a>
           <hr>
-          <a href="me.html"><span>👤</span> โปรไฟล์เต็ม</a>
-          <a href="javascript:void(0)" id="navLogout"><span>🚪</span> ออกจากระบบ</a>`;
+          <a href="me.html"><span>👤</span> ${T.profile_full||T.profile||'Profile'}</a>
+          <a href="javascript:void(0)" id="navLogout"><span>🚪</span> ${T.logout||'Logout'}</a>`;
         navAuth.parentElement.style.position='relative';
         navAuth.after(menu);
         const caret = document.getElementById('navCaret');
