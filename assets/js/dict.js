@@ -171,6 +171,7 @@
       const example  = lang==='th' ? w.ex_vi : w.ex_th;
       flashWrap.innerHTML = `
         <div class="flash-card" id="flash-inner">
+          <button class="flash-card__fav${isFav?' is-on':''}" data-fav="${w.id}" title="${isFav?'ยกเลิกบันทึก':'บันทึก'}" aria-label="${isFav?'ยกเลิกบันทึก':'บันทึก'}">${isFav?'★':'☆'}</button>
           <div class="flash-card__side flash-card__front">
             <div class="dict-card__cat">${catLabel(w.cat)}</div>
             <div class="flash-word">${esc(front)}</div>
@@ -188,17 +189,21 @@
           <button class="btn btn--ghost" id="flash-next">ถัดไป →</button>
         </div>
         <div class="flash-actions">
-          <button class="dict-card__fav${isFav?' is-on':''}" data-fav="${w.id}">${isFav?'★':'☆'} บันทึก</button>
           <button class="btn btn--ghost btn--sm" id="flash-shuffle">🔀 สุ่ม</button>
         </div>`;
-      document.getElementById('flash-inner').addEventListener('click', function(){
+      document.getElementById('flash-inner').addEventListener('click', function(e){
+        if (e.target.closest('.flash-card__fav')) return;
         this.classList.toggle('is-flipped');
       });
       document.getElementById('flash-prev').addEventListener('click', ()=>{ flashIdx=Math.max(0,flashIdx-1); renderFlash(search(words,currentQ,currentCat),getFavs()); });
       document.getElementById('flash-next').addEventListener('click', ()=>{ flashIdx=Math.min(results.length-1,flashIdx+1); renderFlash(search(words,currentQ,currentCat),getFavs()); });
       document.getElementById('flash-shuffle').addEventListener('click', ()=>{ flashIdx=Math.floor(Math.random()*results.length); renderFlash(search(words,currentQ,currentCat),getFavs()); });
-      flashWrap.querySelector('[data-fav]').addEventListener('click', function(){
-        const on = toggleFav(+this.dataset.fav); this.classList.toggle('is-on',on); this.textContent=(on?'★':'☆')+' บันทึก';
+      flashWrap.querySelector('[data-fav]').addEventListener('click', function(e){
+        e.stopPropagation();
+        const on = toggleFav(+this.dataset.fav);
+        this.classList.toggle('is-on',on);
+        this.textContent = on?'★':'☆';
+        this.title = on?'ยกเลิกบันทึก':'บันทึก';
       });
     }
 
