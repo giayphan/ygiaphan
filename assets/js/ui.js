@@ -49,25 +49,35 @@
     el.outerHTML = el.dataset.include === 'header' ? header : footer;
   });
 
-  // Nav toggle (mobile) — delegate so it survives header re-injects
+  // Nav toggle (mobile) — delegated; survives header re-injects + race conditions
   document.addEventListener('click', e => {
-    const btn = e.target.closest('.nav-toggle');
     const navEl = document.querySelector('.nav');
-    if (btn && navEl){
+    if (!navEl) return;
+    const btn = e.target.closest('.nav-toggle');
+    if (btn){
+      e.preventDefault(); e.stopPropagation();
       const open = navEl.classList.toggle('is-open');
       btn.setAttribute('aria-expanded', open);
       return;
     }
-    // close when tapping outside
-    if (navEl?.classList.contains('is-open') && !e.target.closest('.nav') && !e.target.closest('.nav-toggle')){
+    // tap inside menu link → close after navigation triggers
+    if (e.target.closest('.nav__link') && navEl.classList.contains('is-open')){
+      navEl.classList.remove('is-open');
+      document.querySelector('.nav-toggle')?.setAttribute('aria-expanded','false');
+      return;
+    }
+    // tap outside → close
+    if (navEl.classList.contains('is-open') && !e.target.closest('.nav')){
       navEl.classList.remove('is-open');
       document.querySelector('.nav-toggle')?.setAttribute('aria-expanded','false');
     }
-  });
+  }, true); // capture phase: fires before any stopPropagation downstream
 
-  // Language switch
-  document.querySelector('.lang-switch')?.addEventListener('click', () => {
-    window.YP_setLang(window.YP_LANG === 'vi' ? 'th' : 'vi');
+  // Language switch — delegated too
+  document.addEventListener('click', e => {
+    if (e.target.closest('.lang-switch')){
+      window.YP_setLang(window.YP_LANG === 'vi' ? 'th' : 'vi');
+    }
   });
 
   window.YP_setOG();

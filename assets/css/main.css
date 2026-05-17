@@ -478,14 +478,13 @@ body.is-offline::before{content:"📵 ออฟไลน์ — บางคุ�
 }
 
 /* ===== Supporters (index) ===== */
-.supporters{margin:32px 0 0;padding:18px 20px;background:var(--brand-bg);border-radius:14px;border:1px dashed var(--green-soft)}
-.supporters h3{margin:0 0 10px;color:var(--brand);font-size:1rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.supporters__count{font-size:.78em;font-weight:500;color:var(--muted);background:#fff;padding:2px 10px;border-radius:99px}
+.supporters{padding:18px 20px;background:var(--brand-bg);border-radius:14px;border:1px dashed var(--green-soft)}
+.supporters .section__head{margin-bottom:12px}
+.supporters__count{font-size:.6em;font-weight:500;color:var(--muted);background:#fff;padding:2px 10px;border-radius:99px;margin-left:6px;vertical-align:middle}
 .supporters__list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px}
 .supporters__row{display:flex;justify-content:space-between;gap:8px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:.9em}
 .supporters__name{font-weight:600;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .supporters__meta{color:var(--muted);font-size:.85em;flex-shrink:0}
-.supporters__cta{display:inline-block;margin-top:12px;color:var(--brand);font-weight:600;font-size:.88em}
 
 /* ===== Thanks / Supporters ===== */
 .thanks-list{display:flex;flex-wrap:wrap;gap:6px}
