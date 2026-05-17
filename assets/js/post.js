@@ -70,6 +70,8 @@
         <span class="views"><span class="ico-eye"></span> ${views.toLocaleString()} ${T.views||''}</span>
         <span>·</span>
         <button class="like ${window.isLiked(slug)?'is-on':''}" data-like="${slug}">♥ <span class="like__n">${window.getLikes(slug)}</span></button>
+        <span>·</span>
+        <button class="post__tts" id="postTTS" title="${T.read_aloud||'Read aloud'}" aria-label="${T.read_aloud||'Read aloud'}">🔊 <span id="ttsLabel">${T.read_aloud||'Read'}</span></button>
       </div>
       ${meta.cover ? `<img class="post__cover" src="${meta.cover}" alt="">` : ''}
     </header>
@@ -96,6 +98,30 @@
     </section>`;
 
   await renderComments(slug);
+
+  // TTS: read whole article
+  (function bindTTS(){
+    const btn = root.querySelector('#postTTS');
+    const lbl = root.querySelector('#ttsLabel');
+    if (!btn || !window.YP_TTS) return;
+    // target lang = opposite of UI (the language being learned in this post body)
+    const ttsLang = (window.YP_LANG||'vi') === 'th' ? 'vi' : 'th';
+    let playing = false, stop = null;
+    const setLabel = txt => { if (lbl) lbl.textContent = txt; };
+    btn.onclick = () => {
+      if (playing){ stop && stop(); playing=false; setLabel(T.read_aloud||'Read'); btn.classList.remove('is-on'); return; }
+      // Extract clean text from rendered body (skip code/vocab/quiz blocks)
+      const body = root.querySelector('.post__body');
+      if (!body) return;
+      const clone = body.cloneNode(true);
+      clone.querySelectorAll('code,pre,.vocab-block,.quiz-block,.dict-card,table').forEach(n=>n.remove());
+      const text = clone.textContent.replace(/\s+/g,' ').trim();
+      if (!text) return;
+      playing = true; setLabel(T.tts_stop||'⏹'); btn.classList.add('is-on');
+      window.YP_TTS.onfinish = () => { playing=false; setLabel(T.read_aloud||'Read'); btn.classList.remove('is-on'); };
+      stop = window.YP_TTS.speakChunks(text, ttsLang);
+    };
+  })();
 
   // Bind vocab + quiz
   if (window.YP_bindVocab) window.YP_bindVocab(root, slug);

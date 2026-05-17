@@ -223,6 +223,9 @@ a:hover{color:var(--brand);text-decoration:none}
 .bookmark{cursor:pointer;background:none;border:0;color:inherit;font:inherit;padding:0;display:inline-flex;align-items:center;gap:2px}
 .bookmark.is-on{color:var(--brand)}
 .post__header{position:relative}
+.post__tts{cursor:pointer;background:none;border:0;color:var(--brand);font:inherit;padding:2px 8px;border-radius:99px;font-weight:500;display:inline-flex;align-items:center;gap:4px}
+.post__tts:hover{background:var(--brand-bg)}
+.post__tts.is-on{background:var(--brand);color:#fff}
 .post__bookmark{position:absolute;top:-4px;right:-4px;background:none;border:0;font-size:2rem;line-height:1;cursor:pointer;color:var(--muted);padding:6px;transition:color .15s,transform .15s;z-index:2}
 .post__bookmark:hover{transform:scale(1.15)}
 .post__bookmark.is-on{color:#f5b301;text-shadow:0 0 10px rgba(245,179,1,.35)}
