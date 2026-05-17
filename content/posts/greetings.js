@@ -22,7 +22,13 @@ window.YP_POSTS["greetings"] = {
 ## Ví dụ
 
 - **สวัสดีครับ ผมชื่อนาม** — Xin chào, tôi là Nam (nam giới)
-- **สบายดีไหม?** — Bạn khỏe không?`,
+- **สบายดีไหม?** — Bạn khỏe không?
+
+::: vocab
+Xin chào | สวัสดี
+Tạm biệt | ลาก่อน
+Chào bạn | สวัสดี (กับเพื่อน)
+:::`,
   body_th: `## คำทักทายพื้นฐาน
 
 | เวียดนาม | คำอ่าน | ความหมาย |
@@ -36,5 +42,11 @@ window.YP_POSTS["greetings"] = {
 ## ตัวอย่างประโยค
 
 - **Xin chào, tôi là Nam.** — สวัสดี ผมชื่อนาม
-- **Bạn khỏe không?** — สบายดีไหม?`
+- **Bạn khỏe không?** — สบายดีไหม?
+
+::: vocab
+Xin chào | สวัสดี
+Tạm biệt | ลาก่อน
+Chào bạn | สวัสดี (กับเพื่อน)
+:::`
 };
