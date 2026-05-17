@@ -56,6 +56,7 @@
 
   root.innerHTML = `
     <header class="post__header">
+      <button class="post__bookmark" data-bookmark="${slug}" title="บันทึกบทความ" aria-label="บันทึก" hidden>☆</button>
       <div class="post__cats">${cats}</div>
       <h1>${title}</h1>
       <div class="post__meta">
@@ -64,8 +65,6 @@
         <span class="views"><span class="ico-eye"></span> ${views.toLocaleString()} ${T.views||''}</span>
         <span>·</span>
         <button class="like ${window.isLiked(slug)?'is-on':''}" data-like="${slug}">♥ <span class="like__n">${window.getLikes(slug)}</span></button>
-        <span>·</span>
-        <button class="bookmark" data-bookmark="${slug}" title="บันทึกบทความ" hidden>☆ <span class="bookmark__t">บันทึก</span></button>
       </div>
       ${meta.cover ? `<img class="post__cover" src="${meta.cover}" alt="">` : ''}
     </header>
@@ -102,7 +101,7 @@
     const bmBtn = root.querySelector('[data-bookmark]');
     if (bmBtn){
       bmBtn.hidden = false;
-      const updBtn = on => { bmBtn.classList.toggle('is-on', on); bmBtn.firstChild.nodeValue = on?'★ ':'☆ '; };
+      const updBtn = on => { bmBtn.classList.toggle('is-on', on); bmBtn.textContent = on?'★':'☆'; bmBtn.title = on?'ยกเลิกบันทึก':'บันทึกบทความ'; };
       try {
         const list = await window.YP_API.bookmarkList();
         if (list.ok) updBtn(list.slugs.includes(slug));

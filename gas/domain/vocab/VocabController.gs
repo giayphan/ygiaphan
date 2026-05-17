@@ -8,7 +8,7 @@ function vocabSave_(b){
   if (!vi || !th) return {error:'invalid'};
   const sh = sheet_(SH.vocab);
   const all = rowsAsObjects_(sh);
-  const exists = all.find(x => x.user_id === u.user_id && x.vi === vi);
+  const exists = all.find(x => String(x.user_id) === String(u.user_id) && String(x.vi).trim() === vi);
   if (exists) return {ok:true, dup:true};
   sh.appendRow([u.user_id, vi, th, slug, 0, now_(), now_()]);
   return {ok:true};
@@ -18,7 +18,7 @@ function vocabDue_(b){
   const u = sessionUser_(b.token); if (!u) return {error:'login required'};
   const T = now_();
   const list = rowsAsObjects_(sheet_(SH.vocab))
-    .filter(x => x.user_id === u.user_id && Number(x.due_at||0) <= T)
+    .filter(x => String(x.user_id) === String(u.user_id) && Number(x.due_at||0) <= T)
     .sort((a,b) => Number(a.due_at||0) - Number(b.due_at||0))
     .slice(0,30)
     .map(x => ({vi:x.vi, th:x.th, slug:x.slug, box:Number(x.box)||0}));
@@ -27,11 +27,11 @@ function vocabDue_(b){
 
 function vocabReview_(b){
   const u = sessionUser_(b.token); if (!u) return {error:'login required'};
-  const vi = String(b.vi||''); const correct = !!b.correct;
+  const vi = String(b.vi||'').trim(); const correct = !!b.correct;
   const sh = sheet_(SH.vocab);
   const r = sh.getDataRange().getValues(); const h = r.shift();
   const ui = h.indexOf('user_id'), vii = h.indexOf('vi'), bi = h.indexOf('box'), di = h.indexOf('due_at');
-  const idx = r.findIndex(x => x[ui] === u.user_id && x[vii] === vi);
+  const idx = r.findIndex(x => String(x[ui]) === String(u.user_id) && String(x[vii]).trim() === vi);
   if (idx < 0) return {error:'not found'};
   const cur = Number(r[idx][bi])||0;
   const next = correct ? Math.min(5, cur+1) : 0;

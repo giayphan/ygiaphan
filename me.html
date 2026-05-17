@@ -17,6 +17,9 @@
   .me-tab{padding:10px 18px;cursor:pointer;border:none;background:none;font:inherit;color:var(--muted);font-weight:600;border-bottom:2px solid transparent;margin-bottom:-2px}
   .me-tab.active{color:var(--brand);border-bottom-color:var(--brand)}
   .me-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:10px}
+  .me-card--link{display:block;text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s,border-color .15s}
+  .me-card--link:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--brand);text-decoration:none}
+  .me-card--link h3{color:var(--brand)}
   .me-card h3{margin:0 0 4px;font-size:1rem}
   .me-card .meta{color:var(--muted);font-size:.85rem}
   .me-empty{text-align:center;color:var(--muted);padding:32px}
@@ -102,11 +105,18 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
   const bm = await window.YP_API.bookmarkList();
   const bmEl = $('#tab-bookmarks');
   if (bm.ok && bm.slugs.length){
-    bmEl.innerHTML = bm.slugs.map(s => `
-      <div class="me-card">
-        <h3><a href="post.html?slug=${encodeURIComponent(s)}">${s}</a></h3>
-        <p class="meta">slug: ${s}</p>
-      </div>`).join('');
+    if (window.YP_API.loadPosts) { try { await window.YP_API.loadPosts(); } catch(e){} }
+    const posts = window.YP_POSTS || {};
+    bmEl.innerHTML = bm.slugs.map(s => {
+      const p = posts[s] || {};
+      const title = window.pickL ? (window.pickL(p,'title')||s) : (p.title_th||p.title_vi||s);
+      const desc  = window.pickL ? (window.pickL(p,'desc')||'')  : (p.desc_th||p.desc_vi||'');
+      const icon  = p.icon || '📖';
+      return `<a class="me-card me-card--link" href="post.html?slug=${encodeURIComponent(s)}">
+        <h3>${icon} ${title}</h3>
+        ${desc?`<p class="meta">${desc}</p>`:''}
+      </a>`;
+    }).join('');
   } else {
     bmEl.innerHTML = '<div class="me-empty">ยังไม่มีบทความที่บันทึกไว้<br><small>กดรูป ⭐ ในหน้าบทความเพื่อบันทึก</small></div>';
   }
