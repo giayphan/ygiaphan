@@ -29,9 +29,14 @@
     md = teaser + `\n\n---\n\n> 🔒 **เนื้อหานี้สำหรับสมาชิกเท่านั้น**\n>\n> [เข้าสู่ระบบ →](login.html)`;
   }
   let body = window.marked ? marked.parse(md) : md;
-  // Inject vocab/quiz UI at placeholders
-  body = body.replace(/<!--YP_VOCAB-->/, () => window.YP_renderVocab ? window.YP_renderVocab(learn.vocab, slug) : '');
-  body = body.replace(/<!--YP_QUIZ-->/,  () => window.YP_renderQuiz  ? window.YP_renderQuiz(learn.quiz, slug)   : '');
+  // Inject vocab/quiz UI at placeholders (may be wrapped in <p> by marked)
+  const slotRe = tok => new RegExp(`(<p>\\s*)?${tok}(\\s*</p>)?`);
+  body = body.replace(slotRe('YP_VOCAB_SLOT'), () => window.YP_renderVocab ? window.YP_renderVocab(learn.vocab, slug) : '');
+  body = body.replace(slotRe('YP_QUIZ_SLOT'),  () => window.YP_renderQuiz  ? window.YP_renderQuiz(learn.quiz, slug)   : '');
+  // Fallback: auto-vocab with no slot in source — append at end
+  if (learn.vocab.length && !/YP_VOCAB_SLOT/.test(body) && !/vocab-block/.test(body)){
+    body += window.YP_renderVocab ? window.YP_renderVocab(learn.vocab, slug) : '';
+  }
   // wrap Vietnamese tokens in serif when current lang is Thai
   if (window.YP_LANG === 'th') body = window.wrapVN(body);
 

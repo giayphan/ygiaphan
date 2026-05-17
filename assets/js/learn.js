@@ -9,8 +9,30 @@
         const [vi, th] = line.split('|').map(s => s.trim());
         if (vi && th) vocab.push({vi, th});
       });
-      return '<!--YP_VOCAB-->';
+      return 'YP_VOCAB_SLOT';
     });
+    // Auto-extract vocab from markdown tables (when no ::: vocab block)
+    if (!vocab.length){
+      const lines = md.split('\n');
+      let inTable = false, isViTable = false, headerCols = [];
+      for (let i = 0; i < lines.length; i++){
+        const ln = lines[i].trim();
+        if (ln.startsWith('|') && ln.endsWith('|')){
+          const cells = ln.slice(1,-1).split('|').map(s => s.trim());
+          if (!inTable){
+            inTable = true; headerCols = cells;
+            isViTable = /เวียดนาม|Việt|Tiếng Việt/i.test(cells[0]);
+            continue;
+          }
+          if (/^[-:|\s]+$/.test(ln.replace(/\|/g,''))) continue; // separator row
+          if (isViTable && cells.length >= 2){
+            const vi = cells[0], th = cells[cells.length-1];
+            if (vi && th && vi !== th && !/^[-:\s]+$/.test(vi)) vocab.push({vi, th});
+          }
+        } else { inTable = false; isViTable = false; }
+      }
+      if (vocab.length) md += '\n\nYP_VOCAB_SLOT';
+    }
     md = md.replace(/^:::\s*quiz\s*\n([\s\S]*?)\n:::/gm, (_m, body) => {
       const blocks = body.split(/\n(?=Q:)/);
       blocks.forEach(blk => {
@@ -23,7 +45,7 @@
         }));
         if (options.length >= 2) quiz.push({q, options});
       });
-      return '<!--YP_QUIZ-->';
+      return 'YP_QUIZ_SLOT';
     });
     return {md, vocab, quiz};
   };
