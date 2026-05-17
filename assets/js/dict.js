@@ -163,8 +163,10 @@
       const w = results[flashIdx];
       const isFav = favs.has(w.id);
       const lang = window.YP_LANG||'vi';
-      const front    = lang==='th' ? w.vi    : w.th;
-      const back     = lang==='th' ? w.th    : w.vi;
+      // TH UI: เรียนเวียดนาม → front=th (โจทย์), back=vi (เฉลย), phonetic=pv, example=ex_vi
+      // VI UI: เรียนไทย    → front=vi (โจทย์), back=th (เฉลย), phonetic=pt, example=ex_th
+      const front    = lang==='th' ? w.th    : w.vi;
+      const back     = lang==='th' ? w.vi    : w.th;
       const phonetic = lang==='th' ? w.pv    : w.pt;
       const example  = lang==='th' ? w.ex_vi : w.ex_th;
       flashWrap.innerHTML = `
