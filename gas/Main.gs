@@ -96,6 +96,8 @@ function doPostBody_(b){
     if (a === 'vocab_save')       return json_(vocabSave_(b));
     if (a === 'vocab_review')     return json_(vocabReview_(b));
     if (a === 'vocab_due')        return json_(vocabDue_(b));
+    if (a === 'vocab_list')       return json_(vocabList_(b));
+    if (a === 'vocab_delete')     return json_(vocabDelete_(b));
     if (a === 'quiz_submit')      return json_(quizSubmit_(b));
     if (a === 'leaderboard')      return json_(leaderboard_(b));
     if (a === 'thanks_list')      return json_(thanksList_());

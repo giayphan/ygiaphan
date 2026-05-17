@@ -32,7 +32,7 @@ function fixSheetHeaders() {
     'orders':    ['order_id','user_id','email','item_id','item_title','amount','currency','status','slip_url','created_at','paid_at','note'],
     'donations': ['ts','name','amount','channel','note'],
     'magic':     ['token','email','created_at','expires_at','used'],
-    'vocab':     ['user_id','vi','th','slug','box','due_at','created_at'],
+    'vocab':     ['user_id','vi','th','slug','box','due_at','created_at','ph'],
     'quiz_log':  ['user_id','slug','score','total','ts'],
     'bookmarks': ['user_id','slug','created_at'],
   };

@@ -138,45 +138,133 @@ if (!window.YP_AUTH.requireLogin()) {/* will redirect */} else (async () => {
     odEl.innerHTML = '<div class="me-empty">ยังไม่มีคำสั่งซื้อ<br><small><a href="courses.html">ดูคอร์ส →</a></small></div>';
   }
 
-  // Vocab review (Flashcard)
+  // Vocab review (Flashcard) + Library
   const vEl = $('#tab-vocab');
+  const esc = s => String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function speak(text, lang){
+    try{
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = lang||'vi-VN'; u.rate = .85;
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    }catch(_){}
+  }
+  let kbHandler = null;
+  function unbindKb(){ if (kbHandler) document.removeEventListener('keydown', kbHandler); kbHandler = null; }
+
   async function renderVocab(){
+    unbindKb();
     const r = await window.YP_API.vocabDue();
     if (!r.ok || !r.items.length){
-      vEl.innerHTML = '<div class="me-empty">✓ ไม่มีศัพท์ที่ต้องทบทวนตอนนี้<br><small>ไปบันทึกศัพท์จากบทความได้เลย</small></div>';
+      vEl.innerHTML = `
+        <div class="me-empty">✓ ไม่มีศัพท์ที่ต้องทบทวนตอนนี้<br><small>ไปบันทึกศัพท์จากบทความได้เลย</small></div>
+        <div style="text-align:center;margin-top:10px"><button class="btn--ghost" id="vlib">📖 ดูคลังศัพท์ทั้งหมด</button></div>`;
       $('#vocabBadge').hidden = true;
+      $('#vlib').onclick = renderLibrary;
       return;
     }
     $('#vocabBadge').textContent = r.items.length; $('#vocabBadge').hidden = false;
-    let i = 0; let flipped = false;
+    // shuffle
+    const items = r.items.slice().sort(()=>Math.random()-.5);
+    let i = 0, flipped = false, lastAction = null;
     function showCard(){
-      if (i >= r.items.length){
-        vEl.innerHTML = '<div class="me-empty">🎉 จบรอบทบทวนแล้ว!<br><small><a href="javascript:void(0)" onclick="location.reload()">โหลดใหม่</a></small></div>';
+      if (i >= items.length){
+        vEl.innerHTML = `<div class="me-empty">🎉 จบรอบทบทวนแล้ว!<br>
+          <small><a href="javascript:void(0)" onclick="location.reload()">โหลดใหม่</a> ·
+          <a href="javascript:void(0)" id="vlib2">📖 คลังศัพท์</a></small></div>`;
+        $('#vlib2').onclick = renderLibrary;
+        unbindKb();
         return;
       }
-      const v = r.items[i]; flipped = false;
+      const v = items[i]; flipped = false;
       vEl.innerHTML = `
-        <div class="flashcard-progress">การ์ด ${i+1} / ${r.items.length} · กล่อง ${v.box}</div>
+        <div class="flashcard-progress">การ์ด ${i+1} / ${items.length} · กล่อง ${v.box}
+          ${lastAction?` · <a href="javascript:void(0)" id="fundo">↶ ยกเลิก</a>`:''}</div>
         <div class="flashcard" id="fcard">
-          <div class="flashcard__front vn">${v.vi}</div>
-          <div class="flashcard__back" hidden>${v.th}</div>
-          <div class="flashcard__hint">คลิกเพื่อดูคำแปล</div>
+          <button class="flashcard__tts" id="ftts" title="ฟังเสียง" aria-label="ฟัง">🔊</button>
+          <div class="flashcard__front vn">${esc(v.vi)}</div>
+          <div class="flashcard__back" hidden>
+            ${v.ph?`<div class="flashcard__ph">${esc(v.ph)}</div>`:''}
+            <div>${esc(v.th)}</div>
+          </div>
+          <div class="flashcard__hint">คลิกหรือกด <kbd>Space</kbd> เพื่อดูคำแปล</div>
         </div>
         <div class="flashcard__actions" id="fact" hidden>
-          <button class="btn btn--ghost" id="fwrong">✗ ยังไม่จำ</button>
-          <button class="btn btn--primary" id="fright">✓ จำได้</button>
-        </div>`;
-      $('#fcard').onclick = () => {
+          <button class="btn btn--ghost" id="fwrong">✗ ยังไม่จำ <small>(1)</small></button>
+          <button class="btn btn--primary" id="fright">✓ จำได้ <small>(2)</small></button>
+        </div>
+        <div style="text-align:center;margin-top:10px;font-size:.85em"><a href="javascript:void(0)" id="fdel" class="muted">🗑 ลบคำนี้</a></div>`;
+      const flip = () => {
         if (flipped) return;
         flipped = true;
         $('#fcard').querySelector('.flashcard__back').hidden = false;
-        $('#fcard').querySelector('.flashcard__hint').textContent = 'จำได้มั้ย?';
+        $('#fcard').querySelector('.flashcard__hint').textContent = 'จำได้มั้ย? (1=ลืม / 2=จำได้)';
         $('#fact').hidden = false;
+        speak(v.vi);
       };
-      $('#fright').onclick = async () => { await window.YP_API.vocabReview(v.vi, true); i++; showCard(); };
-      $('#fwrong').onclick = async () => { await window.YP_API.vocabReview(v.vi, false); i++; showCard(); };
+      $('#fcard').onclick = e => { if (!e.target.closest('.flashcard__tts')) flip(); };
+      $('#ftts').onclick = e => { e.stopPropagation(); speak(v.vi); };
+      const review = async ok => {
+        lastAction = {vi:v.vi, prevBox:v.box};
+        await window.YP_API.vocabReview(v.vi, ok);
+        i++; showCard();
+      };
+      $('#fright').onclick = () => review(true);
+      $('#fwrong').onclick = () => review(false);
+      $('#fdel').onclick = async () => {
+        if (!confirm('ลบ "'+v.vi+'" ออกจากคลัง?')) return;
+        await window.YP_API.vocabDelete(v.vi); i++; showCard();
+      };
+      const undo = $('#fundo'); if (undo) undo.onclick = async () => {
+        // best-effort: re-review with opposite to roll back box, then re-show
+        // simpler: just refresh
+        location.reload();
+      };
     }
+    kbHandler = e => {
+      if (e.target.matches('input,textarea')) return;
+      if (e.code === 'Space'){ e.preventDefault(); if (!flipped) $('#fcard')?.click(); }
+      else if (flipped && e.key === '1') $('#fwrong')?.click();
+      else if (flipped && e.key === '2') $('#fright')?.click();
+    };
+    document.addEventListener('keydown', kbHandler);
     showCard();
+  }
+
+  async function renderLibrary(){
+    unbindKb();
+    vEl.innerHTML = '<div class="me-empty"><span class="yp-spinner"></span> โหลด…</div>';
+    const r = await window.YP_API.vocabList();
+    if (!r.ok){ vEl.innerHTML = '<div class="me-empty">โหลดไม่สำเร็จ</div>'; return; }
+    const s = r.stats;
+    const boxes = s.byBox.map((n,i) => `<span class="vbox vbox--${i}">กล่อง ${i}: <b>${n}</b></span>`).join('');
+    const rows = r.items.slice().sort((a,b)=>a.box-b.box).map(v => `
+      <div class="vlib-row" data-vi="${esc(v.vi)}">
+        <span class="vlib-box vbox--${v.box}">${v.box}</span>
+        <div class="vlib-text">
+          <strong class="vn">${esc(v.vi)}</strong>
+          ${v.ph?`<span class="muted"> · ${esc(v.ph)}</span>`:''}
+          <div class="muted" style="font-size:.85em">${esc(v.th)}</div>
+        </div>
+        <button class="vlib-tts" title="ฟัง" aria-label="ฟัง">🔊</button>
+        <button class="vlib-del" title="ลบ" aria-label="ลบ">🗑</button>
+      </div>`).join('');
+    vEl.innerHTML = `
+      <div class="vstats">
+        <strong>📦 ${s.total} คำ</strong> · ⏰ ${s.due} ถึงกำหนด
+        <div class="vstats__boxes">${boxes}</div>
+      </div>
+      <div style="margin:10px 0;text-align:center"><button class="btn btn--ghost" id="vback">← กลับไปทบทวน</button></div>
+      <div class="vlib">${rows || '<div class="me-empty">ยังไม่มีคำในคลัง</div>'}</div>`;
+    $('#vback').onclick = renderVocab;
+    vEl.querySelectorAll('.vlib-tts').forEach(b => b.onclick = () => {
+      speak(b.closest('.vlib-row').dataset.vi);
+    });
+    vEl.querySelectorAll('.vlib-del').forEach(b => b.onclick = async () => {
+      const row = b.closest('.vlib-row');
+      if (!confirm('ลบ "'+row.dataset.vi+'"?')) return;
+      const r2 = await window.YP_API.vocabDelete(row.dataset.vi);
+      if (r2.ok) row.remove();
+    });
   }
   await renderVocab();
 

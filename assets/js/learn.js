@@ -27,7 +27,8 @@
           if (/^[-:|\s]+$/.test(ln.replace(/\|/g,''))) continue; // separator row
           if (isViTable && cells.length >= 2){
             const vi = cells[0], th = cells[cells.length-1];
-            if (vi && th && vi !== th && !/^[-:\s]+$/.test(vi)) vocab.push({vi, th});
+            const ph = cells.length >= 3 ? cells[1] : '';
+            if (vi && th && vi !== th && !/^[-:\s]+$/.test(vi)) vocab.push({vi, th, ph});
           }
         } else { inTable = false; isViTable = false; }
       }
@@ -58,8 +59,9 @@
       <h3>📚 ศัพท์ในบทนี้ <small class="muted">(${items.length})</small></h3>
       <div class="vocab-grid">
         ${items.map(v => `
-          <div class="vocab-card" data-vi="${escapeAttr(v.vi)}" data-th="${escapeAttr(v.th)}">
+          <div class="vocab-card" data-vi="${escapeAttr(v.vi)}" data-th="${escapeAttr(v.th)}" data-ph="${escapeAttr(v.ph||'')}">
             <div class="vocab-card__vi vn">${escapeHtml(v.vi)}</div>
+            ${v.ph?`<div class="vocab-card__ph">${escapeHtml(v.ph)}</div>`:''}
             <div class="vocab-card__th">${escapeHtml(v.th)}</div>
             ${isLogin ? `<button class="vocab-card__save" title="บันทึกศัพท์" aria-label="บันทึก">+</button>` : ''}
           </div>`).join('')}
@@ -73,7 +75,7 @@
       btn.onclick = async () => {
         const card = btn.closest('.vocab-card');
         btn.disabled = true;
-        const r = await window.YP_API.vocabSave(card.dataset.vi, card.dataset.th, slug);
+        const r = await window.YP_API.vocabSave(card.dataset.vi, card.dataset.th, slug, card.dataset.ph);
         if (r.ok){ btn.textContent='✓'; btn.classList.add('is-saved'); btn.title = r.dup?'มีอยู่แล้ว':'บันทึกแล้ว'; }
         else { btn.textContent='!'; btn.title='ผิดพลาด: '+r.error; }
       };
